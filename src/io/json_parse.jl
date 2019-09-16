@@ -313,9 +313,9 @@ function arrays_2_matrix(m::Dict{String,Any}, string::String, l::Float64)
         value = [value;transpose(convert(Array{Float64,1},r))]
     end
     value = _PMs.MultiConductorMatrix(value, conductors) * l
-    value[1] < 1e-9 ? value[1] = 1e-9 : nothing
-    value[5] < 1e-9 ? value[5] = 1e-9 : nothing
-    value[9] < 1e-9 ? value[9] = 1e-9 : nothing 
+    # value[1] < 1e-9 ? value[1] = 1e-9 : nothing
+    # value[5] < 1e-9 ? value[5] = 1e-9 : nothing
+    # value[9] < 1e-9 ? value[9] = 1e-9 : nothing 
     return value
 end
 
