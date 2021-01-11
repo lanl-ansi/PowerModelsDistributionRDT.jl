@@ -23,8 +23,8 @@ end
 # `using PowerModelsDistributionRDT`
 
 # so that users do not need to import JuMP to use a solver with PowerModelsDistributionRDT
-import JuMP: with_optimizer
-export with_optimizer
+import JuMP: optimizer_with_attributes
+export optimizer_with_attributes
 
 import MathOptInterface: TerminationStatusCode
 export TerminationStatusCode
