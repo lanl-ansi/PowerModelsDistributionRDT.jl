@@ -1,9 +1,10 @@
-# PowerModelsDistributionRDT exports everything except internal symbols, which are defined as
-# those whose name starts with an underscore. If you don't want all of these
-# symbols in your environment, then use `import PowerModelsDistributionRDT` instead of
-# `using PowerModelsDistributionRDT`.
 
-# Do not add PowerModelsDistributionRDT-defined symbols to this exclude list. Instead, rename
+# microgrid exports everything except internal symbols, which are defined as
+# those whose name starts with an underscore. If you don't want all of these
+# symbols in your environment, then use `import microgrid` instead of
+# `using microgrid`.
+
+# Do not add microgrid-defined symbols to this exclude list. Instead, rename
 # them with an underscore.
 
 const _EXCLUDE_SYMBOLS = [Symbol(@__MODULE__), :eval, :include]
@@ -20,11 +21,11 @@ for sym in names(@__MODULE__, all=true)
 end
 
 # the follow items are also exported for user-friendlyness when calling
-# `using PowerModelsDistributionRDT`
+# `using microgrid`
 
-# so that users do not need to import JuMP to use a solver with PowerModelsDistributionRDT
-import JuMP: optimizer_with_attributes
-export optimizer_with_attributes
+# so that users do not need to import JuMP to use a solver with microgrid
+import JuMP: with_optimizer
+export with_optimizer
 
 import MathOptInterface: TerminationStatusCode
 export TerminationStatusCode
