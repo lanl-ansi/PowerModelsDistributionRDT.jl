@@ -1,0 +1,585 @@
+
+
+{
+  "total_load_met": 0.5,
+  "generators": [
+    {
+      "max_microgrid": 0.05,
+      "microgrid_cost": 0,
+      "microgrid_fixed_cost": 0,
+      "is_new": false,
+      "id": "source-sourcebus",
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "node_id": "sourcebus",
+      "max_real_phase": [
+        1.7976931348623e+303,
+        1.7976931348623e+303,
+        1.7976931348623e+303
+      ],
+      "max_reactive_phase": [
+        1.7976931348623e+303,
+        1.7976931348623e+303,
+        1.7976931348623e+303
+      ]
+    },
+    {
+      "max_microgrid": 0.05,
+      "microgrid_cost": 150,
+      "microgrid_fixed_cost": 500,
+      "is_new": true,
+      "id": "g1814",
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "node_id": "1806",
+      "max_real_phase": [
+        3.3333333333333e-6,
+        3.3333333333333e-6,
+        3.3333333333333e-6
+      ],
+      "max_reactive_phase": [
+        1.7991427404603e-6,
+        1.7991427404603e-6,
+        1.7991427404603e-6
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "hardened_disabled_lines": [
+        
+      ],
+      "id": "1",
+      "disable_lines": [
+        "l101",
+        "l2001"
+      ]
+    }
+  ],
+  "critical_load_met": 0.98,
+  "line_codes": [
+    {
+      "line_code": 0,
+      "num_phases": 3,
+      "rmatrix": [
+        [
+          0.00047860457466919,
+          7.5220548204159e-5,
+          7.6258809073724e-5
+        ],
+        [
+          7.5220548204159e-5,
+          0.00047395028355388,
+          7.3967466918715e-5
+        ],
+        [
+          7.6258809073724e-5,
+          7.3967466918715e-5,
+          0.00047595519848771
+        ]
+      ],
+      "xmatrix": [
+        [
+          0.00047770950850662,
+          0.00020690124763705,
+          0.00017954831758034
+        ],
+        [
+          0.00020690124763705,
+          0.00048580083175803,
+          0.00016436816635161
+        ],
+        [
+          0.00017954831758034,
+          0.00016436816635161,
+          0.00048229221172023
+        ]
+      ]
+    },
+    {
+      "line_code": 32,
+      "num_phases": 3,
+      "rmatrix": [
+        [
+          0.00047860457466919,
+          7.5220548204159e-5,
+          7.6258809073724e-5
+        ],
+        [
+          7.5220548204159e-5,
+          0.00047395028355388,
+          7.3967466918715e-5
+        ],
+        [
+          7.6258809073724e-5,
+          7.3967466918715e-5,
+          0.00047595519848771
+        ]
+      ],
+      "xmatrix": [
+        [
+          0.00047770950850662,
+          0.00020690124763705,
+          0.00017954831758034
+        ],
+        [
+          0.00020690124763705,
+          0.00048580083175803,
+          0.00016436816635161
+        ],
+        [
+          0.00017954831758034,
+          0.00016436816635161,
+          0.00048229221172023
+        ]
+      ]
+    },
+    {
+      "line_code": 33,
+      "num_phases": 3,
+      "rmatrix": [
+        [
+          0.00047860457466919,
+          7.5220548204159e-5,
+          7.6258809073724e-5
+        ],
+        [
+          7.5220548204159e-5,
+          0.00047395028355388,
+          7.3967466918715e-5
+        ],
+        [
+          7.6258809073724e-5,
+          7.3967466918715e-5,
+          0.00047595519848771
+        ]
+      ],
+      "xmatrix": [
+        [
+          0.00047770950850662,
+          0.00020690124763705,
+          0.00017954831758034
+        ],
+        [
+          0.00020690124763705,
+          0.00048580083175803,
+          0.00016436816635161
+        ],
+        [
+          0.00017954831758034,
+          0.00016436816635161,
+          0.00048229221172023
+        ]
+      ]
+    },
+    {
+      "line_code": 126,
+      "num_phases": 3,
+      "rmatrix": [
+        [
+          9.4517958412098e-9,
+          0,
+          0
+        ],
+        [
+          0,
+          9.4517958412098e-9,
+          0
+        ],
+        [
+          0,
+          0,
+          9.4517958412098e-9
+        ]
+      ],
+      "xmatrix": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "line_code": 128,
+      "num_phases": 3,
+      "rmatrix": [
+        [
+          9.4517958412098e-9,
+          0,
+          0
+        ],
+        [
+          0,
+          9.4517958412098e-9,
+          0
+        ],
+        [
+          0,
+          0,
+          9.4517958412098e-9
+        ]
+      ],
+      "xmatrix": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ]
+    }
+  ],
+  "buses": [
+    {
+      "min_voltage": 0.8,
+      "id": "sourcebus",
+      "x": -72.654429517,
+      "max_voltage": 1.2,
+      "ref_voltage": [
+        1,
+        1,
+        1
+      ],
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "y": 41.750093406
+    },
+    {
+      "min_voltage": 0.8,
+      "id": "2800",
+      "x": -72.65474391,
+      "max_voltage": 1.2,
+      "ref_voltage": [
+        1,
+        1,
+        1
+      ],
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "y": 41.749612757
+    },
+    {
+      "min_voltage": 0.85,
+      "id": "2802",
+      "x": -72.655093135,
+      "max_voltage": 1.05,
+      "ref_voltage": [
+        1,
+        1,
+        1
+      ],
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "y": 41.749083498
+    },
+    {
+      "min_voltage": 0.8,
+      "id": "1800",
+      "x": -72.655103333,
+      "max_voltage": 1.2,
+      "ref_voltage": [
+        1,
+        1,
+        1
+      ],
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "y": 41.750256308
+    },
+    {
+      "min_voltage": 0.85,
+      "id": "1802",
+      "x": -72.655861241,
+      "max_voltage": 1.05,
+      "ref_voltage": [
+        1,
+        1,
+        1
+      ],
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "y": 41.750440126
+    },
+    {
+      "min_voltage": 0.85,
+      "id": "1806",
+      "x": -72.659493156,
+      "max_voltage": 1.05,
+      "ref_voltage": [
+        1,
+        1,
+        1
+      ],
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "y": 41.754817029
+    }
+  ],
+  "lines": [
+    {
+      "line_code": 0,
+      "is_new": false,
+      "length": 0.2151976954638,
+      "harden_cost": 4.3752376578427,
+      "id": "l2001",
+      "has_switch": false,
+      "switch_cost": 15,
+      "num_phases": 3,
+      "node2_id": "2802",
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "is_transformer": false,
+      "num_poles": 2,
+      "node1_id": "2800",
+      "capacity": 57.6
+    },
+    {
+      "line_code": 32,
+      "is_new": false,
+      "length": 0.21689577308803,
+      "harden_cost": 5.3811754471636,
+      "id": "l101",
+      "has_switch": false,
+      "switch_cost": 15,
+      "num_phases": 3,
+      "node2_id": "1802",
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "is_transformer": false,
+      "num_poles": 2,
+      "node1_id": "1800",
+      "capacity": 57.6
+    },
+    {
+      "line_code": 33,
+      "is_new": false,
+      "length": 1.8778522346457,
+      "harden_cost": 39.244010948423,
+      "id": "l102",
+      "has_switch": false,
+      "switch_cost": 15,
+      "num_phases": 3,
+      "node2_id": "1806",
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "is_transformer": false,
+      "num_poles": 2,
+      "node1_id": "1802",
+      "capacity": 57.6
+    },
+    {
+      "line_code": 126,
+      "is_new": false,
+      "length": 1,
+      "id": "subxf1",
+      "has_switch": false,
+      "num_phases": 3,
+      "node2_id": "1800",
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "is_transformer": true,
+      "num_poles": 2,
+      "node1_id": "sourcebus",
+      "capacity": 250
+    },
+    {
+      "line_code": 128,
+      "is_new": false,
+      "length": 1,
+      "id": "subxf2",
+      "has_switch": false,
+      "num_phases": 3,
+      "node2_id": "2800",
+      "has_phase": [
+        true,
+        true,
+        true
+      ],
+      "is_transformer": true,
+      "num_poles": 2,
+      "node1_id": "sourcebus",
+      "capacity": 250
+    }
+  ],
+  "phase_variation": 0.15,
+  "loads": [ 
+    {
+      "is_critical": false,
+      "id": "d1802_1806sb",
+      "has_phase": [
+        false,
+        true,
+        false
+      ],
+      "node_id": "1802",
+      "max_real_phase": [
+        0,
+        0.00015,
+        0
+      ],
+      "max_reactive_phase": [
+        0,
+        7.5e-5,
+        0
+      ]
+    },
+    {
+      "is_critical": false,
+      "id": "d1802_1806rb",
+      "has_phase": [
+        false,
+        true,
+        false
+      ],
+      "node_id": "1806",
+      "max_real_phase": [
+        0,
+        0.00015,
+        0
+      ],
+      "max_reactive_phase": [
+        0,
+        7.5e-5,
+        0
+      ]
+    },
+    {
+      "is_critical": false,
+      "id": "d1802_1806sc",
+      "has_phase": [
+        false,
+        false,
+        true
+      ],
+      "node_id": "1802",
+      "max_real_phase": [
+        0,
+        0,
+        0.000125
+      ],
+      "max_reactive_phase": [
+        0,
+        0,
+        7.0e-5
+      ]
+    },
+    {
+      "is_critical": false,
+      "id": "d1802_1806rc",
+      "has_phase": [
+        false,
+        false,
+        true
+      ],
+      "node_id": "1806",
+      "max_real_phase": [
+        0,
+        0,
+        0.000125
+      ],
+      "max_reactive_phase": [
+        0,
+        0,
+        7.0e-5
+      ]
+    },
+    {
+      "is_critical": false,
+      "id": "d2802_2806sb",
+      "has_phase": [
+        false,
+        true,
+        false
+      ],
+      "node_id": "2802",
+      "max_real_phase": [
+        0,
+        0.00015,
+        0
+      ],
+      "max_reactive_phase": [
+        0,
+        7.5e-5,
+        0
+      ]
+    },
+    {
+      "is_critical": false,
+      "id": "d2802_2806sc",
+      "has_phase": [
+        false,
+        false,
+        true
+      ],
+      "node_id": "2802",
+      "max_real_phase": [
+        0,
+        0,
+        0.000125
+      ],
+      "max_reactive_phase": [
+        0,
+        0,
+        7.0e-5
+      ]
+    }
+  ],
+  "chance_constraint": 1
+}
+

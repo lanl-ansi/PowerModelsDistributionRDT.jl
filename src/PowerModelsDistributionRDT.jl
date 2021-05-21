@@ -16,5 +16,8 @@ module PowerModelsDistributionRDT
 
 
 
+    include("io/common.jl")
+    include("io/json_parse.jl")
+
     include("core/export.jl")  # must be last include to properly export functions
 end # module
