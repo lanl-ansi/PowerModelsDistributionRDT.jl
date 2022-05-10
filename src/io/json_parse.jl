@@ -2,14 +2,14 @@ import JSON
 using LinearAlgebra
 
 pms_keys = [
-    "bus",              
-    "source_type",            
-    "name",        
-    "dcline",         
-    "source_version",       
-    "branch",               
-    "gen",             
-    "storage",             
+    "bus",
+    "source_type",
+    "name",
+    "dcline",
+    "source_version",
+    "branch",
+    "gen",
+    "storage",
     "switch",
     "conductors",
     "shunt",
@@ -17,17 +17,18 @@ pms_keys = [
     "per_unit",
     "baseMVA",
     "data_model",
-    "transformer" ]     
+    "transformer" ]
 
 global_keys = Set{String}([
-    "phase_variation", 
+    "phase_variation",
     "total_load_met",
     "critical_load_met",
     "chance_constraint",
     "scenarios",
+    "data_model",
     ])
 
-function parse_json(io::IOStream; validate=false) 
+function parse_json(io::IOStream; validate=false)
     json_data = JSON.parse(io; dicttype=Dict, inttype=Int64)
     return pm_data = json_to_powermodels(json_data)
 end
@@ -44,26 +45,31 @@ function json_to_powermodels(data::Dict{String,Any})
     json2pm_gen!(data, pm_data, lookups)
     json2pm_bus!(data, pm_data, lookups)
     json2pm_load!(data, pm_data, lookups)
+    pm_data["settings"] = get(pm_data,"settings", Dict{String,Any}("sbase_default" => get(data, "baseMVA", 1e6)))
     add_keys!(pm_data)
     correct_network_data!(pm_data)
     haskey(data,"scenarios") ? json2pm_scenarios!(data, pm_data, lookups) : println("No scenarios found in file")
     haskey(pm_data, "scenarios") ?  mn_data = _PMs.replicate(pm_data, length(keys(pm_data["scenarios"])), global_keys=global_keys) : mn_data = pm_data
+
+    # not sure why this isn't getting replicated
+    for n in keys(mn_data["nw"])
+        mn_data["nw"][n]["per_unit"] = pm_data["per_unit"]
+    end
+
     return mn_data
 end
 
-# global_keys = Set{String}(["num_scenarios", "num_time_periods", "epsilon", "time_period_bus_data", "scenario_bus_data", "scenario_load_data", "scenario", "scenario_feasible_data", "time_period", "critical_bus_data"])
-#     mn_data = _PMs.replicate(pm_data, num_scenarios*num_time_periods; global_keys=global_keys)
 function create_lookups(data::Dict{String,Any})
     lookups = Dict{Symbol,Any}()
     lookups[:bus] = Dict{String,Any}()
     lookups[:type] = Dict{String,Any}()
     for (i, bus) in enumerate(data["buses"])
-        lookups[:bus][bus["id"]] = i 
+        lookups[:bus][bus["id"]] = i
         occursin("source", bus["id"]) ? lookups[:type][bus["id"]] = 3 : lookups[:type][bus["id"]] = 1
     end
     lookups[:branch] = Dict{Int,Any}()
     for (i, branch) in enumerate(data["line_codes"])
-        lookups[:branch][branch["line_code"]+1] = i  
+        lookups[:branch][branch["line_code"]+1] = i
     end
     return lookups
 end
@@ -82,8 +88,8 @@ end
 # node1_id                  The id of one node (bus) the line is connected to
 # node2_id                  The id of one node (bus) the line is connected to
 # has_phase                 An array of whether or not a line carries a phase
-# capacity                  per unit capacity (rating) of the line 
-# length                    per unit length of the line 
+# capacity                  per unit capacity (rating) of the line
+# length                    per unit length of the line
 # num_phases                The number of phases the line carries
 # is_transformer            Whether or the line is a transformer
 # line_code                 Id of the line code for the line
@@ -98,16 +104,16 @@ end
 # 'The line codes are defined with the following parameters
 # line code                    A string that uniquely identifies the line code
 # num_phases                   Number of phases for the line code
-# rmatrix                      An array of the resistance terms for the line 
-#                              (per length, per unit). 
-# xmatrix                      An array of the reactance terms for the line 
-#                              (per length, per unit). 
-# 
+# rmatrix                      An array of the resistance terms for the line
+#                              (per length, per unit).
+# xmatrix                      An array of the reactance terms for the line
+#                              (per length, per unit).
+#
 function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups::Dict{Symbol,Any})
     branch_data = Dict{String,Any}()
     lookups[:branch_names] = Dict{String,Any}()
     for (i, branch) in enumerate(data["lines"])
-        # information about line 
+        # information about line
         id = string(i)
         branch_data[id] = Dict{String,Any}()
         branch_data[id]["name"] = branch["id"]
@@ -115,8 +121,8 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         lookups[:branch_names][branch["id"]] = i
         branch_data[id]["source_id"] = ["branch", i]
         branch_data[id]["br_status"] = 1
-      
-        # transformer or not 
+
+        # transformer or not
         branch_data[id]["transformer"] = branch["is_transformer"]
         branch_data[id]["tap"] = Array{Float64,1}([1.0 for i in 1:pm_data["conductors"]])
         branch_data[id]["shift"] = Array{Float64,1}([0.0 for i in 1:pm_data["conductors"]])
@@ -125,8 +131,8 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         branch_data[id]["f_bus"] = lookups[:bus][branch["node1_id"]]
         branch_data[id]["t_bus"] = lookups[:bus][branch["node2_id"]]
 
-        # line parameters 
-        branch_data[id]["br_r"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "rmatrix", convert(Float64,branch["length"])) 
+        # line parameters
+        branch_data[id]["br_r"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "rmatrix", convert(Float64,branch["length"]))
         branch_data[id]["br_x"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "xmatrix", convert(Float64,branch["length"]))
         branch_data[id]["g_to"] = make_zeros()
         branch_data[id]["g_fr"] = make_zeros()
@@ -139,7 +145,7 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         # switch
         branch_data[id]["switch"] = branch["has_switch"]
 
-        # capacity 
+        # capacity
         branch_data[id]["rate_a"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
         branch_data[id]["rate_b"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
         branch_data[id]["rate_c"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
@@ -147,6 +153,9 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         # angle
         branch_data[id]["angmin"] = Array{Float64,1}([-.523599 for i in 1:pm_data["conductors"]])
         branch_data[id]["angmax"] = Array{Float64,1}([.523599 for i in 1:pm_data["conductors"]])
+
+        branch_data[id]["f_connections"] = collect(1:pm_data["conductors"])
+        branch_data[id]["t_connections"] = collect(1:pm_data["conductors"])
 
         # keys that maybe missing from some lines
         keys_ =["switch_cost", "harden_cost", "construction_cost", "num_poles", "can_harden", "can_add_switch", "is_new", "has_switch"]
@@ -176,7 +185,7 @@ function json2pm_gen!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
     gen_data = Dict{String,Any}()
     for (i, gen) in enumerate(data["generators"])
         id = string(i)
-        # information about gen 
+        # information about gen
         gen_data[id] = Dict{String,Any}()
         gen_data[id]["name"] = gen["id"]
         gen_data[id]["index"] = i
@@ -206,9 +215,11 @@ function json2pm_gen!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
         gen_data[id]["vg"] = Array{Float64,1}(convert(Array{Float64}, data["buses"][lookups[:bus][gen["node_id"]]]["ref_voltage"]))
 
         gen_data[id]["microgrid_cost"] = gen["microgrid_cost"]
-        # applys generic cost 
+        # applys generic cost
         gen_data[id]["ncost"] = 3
         gen_data[id]["cost"] = [0.0, 1.0, 0.0]
+
+        gen_data[id]["connections"] = collect(1:pm_data["conductors"])
     end
     pm_data["gen"] = gen_data
 end
@@ -247,10 +258,13 @@ function json2pm_bus!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
         bus_data[id]["zone"] = 1
         bus_data[id]["area"] = 1
 
-        
+
         #coordinates
         bus_data[id]["x"] = bus["x"]
         bus_data[id]["y"] = bus["x"]
+
+        bus_data[id]["terminals"] = collect(1:pm_data["conductors"])
+        bus_data[id]["grounded"]  = fill(false, pm_data["conductors"])
     end
     pm_data["bus"] = bus_data
 end
@@ -284,11 +298,12 @@ function json2pm_load!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookup
         load_data[id]["pd"] = Array{Float64,1}(load["max_real_phase"])
         load_data[id]["qd"] = Array{Float64,1}(load["max_reactive_phase"])
 
-        # critical 
+        # critical
         load["is_critical"] ? load_data[id]["weight"] = 100 : load_data[id]["weight"] = 1
 
         # add model type
         load_data[id]["model"] = _PMD.POWER
+        load_data[id]["connections"] = [i for i in 1:pm_data["conductors"] if load["has_phase"][i]]
     end
     pm_data["load"] = load_data
 end
@@ -309,8 +324,8 @@ function json2pm_scenarios!(data::Dict{String,Any}, pm_data::Dict{String,Any}, l
         # information about senarios
         scenario_data[id] = Dict{String,Any}()
         scenario_data[id]["name"] = s["id"]
-        haskey(s, "disable_lines") ? scenario_data[id]["disabled_lines"] = [string(lookups[:branch_names][i]) for i in s["disable_lines"]] : nothing 
-        haskey(s, "hardened_disabled_lines") ? scenario_data[id]["hardened_disabled_lines"] = [string(lookups[:branch_names][i]) for i in s["hardened_disabled_lines"]] : nothing 
+        haskey(s, "disable_lines") ? scenario_data[id]["disabled_lines"] = [string(lookups[:branch_names][i]) for i in s["disable_lines"]] : nothing
+        haskey(s, "hardened_disabled_lines") ? scenario_data[id]["hardened_disabled_lines"] = [string(lookups[:branch_names][i]) for i in s["hardened_disabled_lines"]] : nothing
         haskey(s, "disabled_communication_lines") ? scenario_data[id]["disabled_communication_lines"] = [string(lookups[:branch_names][i]) for i in s["disabled_communication_lines"]] : nothing
     end
     pm_data["scenarios"] = scenario_data
@@ -336,7 +351,7 @@ function arrays_2_matrix(m::Dict{String,Any}, string::String, l::Float64)
     end
     value[1] < 1e-9 ? value[1] = 1e-9 : nothing
     value[5] < 1e-9 ? value[5] = 1e-9 : nothing
-    value[9] < 1e-9 ? value[9] = 1e-9 : nothing 
+    value[9] < 1e-9 ? value[9] = 1e-9 : nothing
     return value
 end
 
@@ -345,6 +360,3 @@ function make_zeros()
     value = zeros(Float64, 3, 3)
     return value
 end
-
-
-
