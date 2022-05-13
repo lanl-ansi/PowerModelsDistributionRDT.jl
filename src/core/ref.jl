@@ -74,29 +74,38 @@ function ref_add_damaged_lines!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any
     ref[:arcs_damaged_all] = hold
 end
 
-function ref_add_new_lines!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-    if _INs.ismultinetwork(data)
-        nws_data = data["nw"]
-    else
-        nws_data = Dict("0" => data)
-    end
-    hold = Array{Tuple{Int64,Int64,Int64},1}()
-    for (n, nw_data) in nws_data
-        nw_id = parse(Int, n)
-        nw_ref = ref[:nw][nw_id]
-        nw_ref[:arcs_new] = Array{Tuple{Int64,Int64,Int64},1}()
-        for (i, branch) in nw_ref[:branch]
-            if branch["is_new"]
-                push!(nw_ref[:arcs_new], (i,branch["t_bus"],branch["f_bus"]))
-                if (i,branch["t_bus"],branch["f_bus"]) in hold
-                    nothing
-                else
-                   push!(hold, (i,branch["t_bus"],branch["f_bus"]))
-                end
+function ref_add_branch_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+    for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
+        ### filter out inactive components ###
+        nw_ref[:branch_ne] = Dict(x for x in get(nw_ref, :branch_ne, Dict()) if (x.second["br_status"] != 0 && x.second["f_bus"] in keys(nw_ref[:bus]) && x.second["t_bus"] in keys(nw_ref[:bus])))
+
+        ### setup arcs from edges ###
+        nw_ref[:arcs_branch_ne_from] = [(i,branch["f_bus"],branch["t_bus"]) for (i,branch) in nw_ref[:branch_ne]]
+        nw_ref[:arcs_branch_ne_to]   = [(i,branch["t_bus"],branch["f_bus"]) for (i,branch) in nw_ref[:branch_ne]]
+        nw_ref[:arcs_branch_ne]      = [nw_ref[:arcs_branch_ne_from]; nw_ref[:arcs_branch_ne_to]]
+
+        ### bus connected component lookups ###
+        bus_arcs = Dict((i, Tuple{Int,Int,Int}[]) for (i,bus) in nw_ref[:bus])
+        for (l,i,j) in nw_ref[:arcs_branch_ne]
+            push!(bus_arcs[i], (l,i,j))
+        end
+        nw_ref[:bus_arcs_branch_ne] = bus_arcs
+
+        ### connections
+        conns = Dict{Int,Vector{Tuple{Tuple{Int,Int,Int},Vector{Int}}}}([(i, []) for (i, bus) in nw_ref[:bus]])
+        for (i, obj) in nw_ref[:branch_ne]
+            push!(conns[obj["f_bus"]], ((obj["index"], obj["f_bus"], obj["t_bus"]), obj["f_connections"]))
+            if obj["f_bus"] != obj["t_bus"]
+                push!(conns[obj["t_bus"]], ((obj["index"], obj["t_bus"], obj["f_bus"]), obj["t_connections"]))
             end
         end
+        nw_ref[:bus_arcs_conns_branch_ne] = conns
+
+        ### aggregate info for pairs of connected buses ###
+        if !haskey(nw_ref, :buspairs_ne)
+            nw_ref[:buspairs_ne] = _PMD.calc_buspair_parameters(nw_ref[:bus], nw_ref[:branch_ne])
+        end
     end
-    ref[:arcs_new_all] = hold
 end
 
 # functions to enumerate sub tours:
@@ -193,7 +202,7 @@ function node2arcs(cycle, ref::Dict{Symbol,<:Any})
             push!(arcIter,arcDict[aKey])
         end
     end
-    arc_cycle_list = []; 
+    arc_cycle_list = [];
     for i in Iterators.product(arcIter...)
         push!(arc_cycle_list,i);
     end
@@ -224,9 +233,9 @@ function ref_add_subtour!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
 end
 
 function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-    ref_add_new_lines!(ref, data)
-    ref_add_damaged_lines!(ref, data)
-    ref_add_vm_imbalance!(ref, data)
-    ref_add_pq_imbalance!(ref, data)
-    ref_add_subtour!(ref, data)
+    ref_add_branch_ne!(ref, data)
+#    ref_add_damaged_lines!(ref, data)
+#    ref_add_vm_imbalance!(ref, data)
+#    ref_add_pq_imbalance!(ref, data)
+#    ref_add_subtour!(ref, data)
 end

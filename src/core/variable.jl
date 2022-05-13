@@ -20,19 +20,27 @@ function variable_branch_be_q(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)
     start = 0)
 end
 
-function variable_xe(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)
-    _PMs.var(pm, nw)[:xe_d] = JuMP.@variable(pm.model,
-    [(l,i,j) in pm.ref[:arcs_damaged_all]],
-    base_name = "$(nw)_branch_xe_damaged",
-    binary = true,
-    start = 0)
-    _PMs.var(pm, nw)[:xe_n] = JuMP.@variable(pm.model,
-    [(l,i,j) in pm.ref[:arcs_new_all]],
-    base_name = "$(nw)_branch_xe_new",
-    binary = true,
-    start = 0)
-    # println(pm.model)
-    # println(stop)
+function variable_xe(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
+    if relax
+        xe = _PMD.var(pm, nw)[:xe] = JuMP.@variable(pm.model,
+                [i in _PMD.ids(pm, nw, :branch_ne)],
+                base_name="$(nw)_xe",
+                lower_bound = 0,
+                upper_bound = 1,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
+             )
+    else
+        xe = _PMD.var(pm, nw)[:xe] = JuMP.@variable(pm.model,
+                [i in _PMD.ids(pm, nw, :branch_ne)],
+                base_name="$(nw)_xe",
+                binary = true,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
+             )
+     end
+
+
+
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe, _PMD.ids(pm, nw, :branch_ne), xe)
 end
 
 function variable_te(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)

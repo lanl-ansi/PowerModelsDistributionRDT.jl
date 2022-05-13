@@ -49,7 +49,12 @@ function json_to_powermodels(data::Dict{String,Any})
     add_keys!(pm_data)
     correct_network_data!(pm_data)
     haskey(data,"scenarios") ? json2pm_scenarios!(data, pm_data, lookups) : println("No scenarios found in file")
-    haskey(pm_data, "scenarios") ?  mn_data = _PMs.replicate(pm_data, length(keys(pm_data["scenarios"])), global_keys=global_keys) : mn_data = pm_data
+    haskey(pm_data, "scenarios") ?  mn_data = _PMs.replicate(pm_data, length(keys(pm_data["scenarios"]))+1, global_keys=global_keys) : mn_data = pm_data
+
+    mn_data["nw"]["0"] = mn_data["nw"][string(length(keys(pm_data["scenarios"]))+1)]
+    delete!(mn_data["nw"], string(length(keys(pm_data["scenarios"]))+1))
+
+    println("Need to actually use the damage information in the scenarios to define stuff!!!!!")
 
     # not sure why this isn't getting replicated
     for n in keys(mn_data["nw"])
@@ -110,64 +115,73 @@ end
 #                              (per length, per unit).
 #
 function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups::Dict{Symbol,Any})
-    branch_data = Dict{String,Any}()
+    branch_data            = Dict{String,Any}()
+    branch_ne_data         = Dict{String,Any}()
     lookups[:branch_names] = Dict{String,Any}()
     for (i, branch) in enumerate(data["lines"])
         # information about line
         id = string(i)
-        branch_data[id] = Dict{String,Any}()
-        branch_data[id]["name"] = branch["id"]
-        branch_data[id]["index"] = i
+        info = Dict{String,Any}()
+
+        if branch["is_new"]
+            branch_ne_data[id]  = info
+        else
+            branch_data[id] = info
+        end
+
+        info["name"] = branch["id"]
+        info["index"] = i
         lookups[:branch_names][branch["id"]] = i
-        branch_data[id]["source_id"] = ["branch", i]
-        branch_data[id]["br_status"] = 1
+        info["source_id"] = ["branch", i]
+        info["br_status"] = 1
 
         # transformer or not
-        branch_data[id]["transformer"] = branch["is_transformer"]
-        branch_data[id]["tap"] = Array{Float64,1}([1.0 for i in 1:pm_data["conductors"]])
-        branch_data[id]["shift"] = Array{Float64,1}([0.0 for i in 1:pm_data["conductors"]])
+        info["transformer"] = branch["is_transformer"]
+        info["tap"] = Array{Float64,1}([1.0 for i in 1:pm_data["conductors"]])
+        info["shift"] = Array{Float64,1}([0.0 for i in 1:pm_data["conductors"]])
 
         # connections
-        branch_data[id]["f_bus"] = lookups[:bus][branch["node1_id"]]
-        branch_data[id]["t_bus"] = lookups[:bus][branch["node2_id"]]
+        info["f_bus"] = lookups[:bus][branch["node1_id"]]
+        info["t_bus"] = lookups[:bus][branch["node2_id"]]
 
         # line parameters
-        branch_data[id]["br_r"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "rmatrix", convert(Float64,branch["length"]))
-        branch_data[id]["br_x"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "xmatrix", convert(Float64,branch["length"]))
-        branch_data[id]["g_to"] = make_zeros()
-        branch_data[id]["g_fr"] = make_zeros()
-        branch_data[id]["b_to"] = make_zeros()
-        branch_data[id]["b_fr"] = make_zeros()
+        info["br_r"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "rmatrix", convert(Float64,branch["length"]))
+        info["br_x"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "xmatrix", convert(Float64,branch["length"]))
+        info["g_to"] = make_zeros()
+        info["g_fr"] = make_zeros()
+        info["b_to"] = make_zeros()
+        info["b_fr"] = make_zeros()
 
         # active phases
-        branch_data[id]["active_phases"] = [i for i in 1:pm_data["conductors"] if branch["has_phase"][i]]
+        info["active_phases"] = [i for i in 1:pm_data["conductors"] if branch["has_phase"][i]]
 
         # switch
-        branch_data[id]["switch"] = branch["has_switch"]
+        info["switch"] = branch["has_switch"]
 
         # capacity
-        branch_data[id]["rate_a"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
-        branch_data[id]["rate_b"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
-        branch_data[id]["rate_c"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
+        info["rate_a"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
+        info["rate_b"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
+        info["rate_c"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
 
         # angle
-        branch_data[id]["angmin"] = Array{Float64,1}([-.523599 for i in 1:pm_data["conductors"]])
-        branch_data[id]["angmax"] = Array{Float64,1}([.523599 for i in 1:pm_data["conductors"]])
+        info["angmin"] = Array{Float64,1}([-.523599 for i in 1:pm_data["conductors"]])
+        info["angmax"] = Array{Float64,1}([.523599 for i in 1:pm_data["conductors"]])
 
-        branch_data[id]["f_connections"] = collect(1:pm_data["conductors"])
-        branch_data[id]["t_connections"] = collect(1:pm_data["conductors"])
+        info["f_connections"] = collect(1:pm_data["conductors"])
+        info["t_connections"] = collect(1:pm_data["conductors"])
 
         # keys that maybe missing from some lines
         keys_ =["switch_cost", "harden_cost", "construction_cost", "num_poles", "can_harden", "can_add_switch", "is_new", "has_switch"]
         for k in keys_
             if haskey(branch, k)
-                branch_data[id][k] = branch[k]
+                info[k] = branch[k]
             elseif k == "harden_cost"
-                branch_data[id][k] = 0.0 # this places hardening into construction_cost
+                info[k] = 0.0 # this places hardening into construction_cost
             end
         end
     end
-    pm_data["branch"] = branch_data
+    pm_data["branch"]    = branch_data
+    pm_data["branch_ne"] = branch_ne_data
 end
 
 
