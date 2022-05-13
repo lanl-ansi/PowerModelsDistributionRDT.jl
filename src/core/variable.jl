@@ -37,10 +37,28 @@ function variable_xe(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_d
                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
              )
      end
-
-
-
     report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe, _PMD.ids(pm, nw, :branch_ne), xe)
+end
+
+
+function variable_he(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
+    if relax
+        he = _PMD.var(pm, nw)[:he] = JuMP.@variable(pm.model,
+                [i in _PMD.ref(pm, nw, :branch_harden)],
+                base_name="$(nw)_he",
+                lower_bound = 0,
+                upper_bound = 1,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
+             )
+    else
+        he = _PMD.var(pm, nw)[:xe] = JuMP.@variable(pm.model,
+                [i in _PMD.ids(pm, nw, :branch_harden)],
+                base_name="$(nw)_he",
+                binary = true,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
+             )
+     end
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :he, _PMD.ref(pm, nw, :branch_harden), he)
 end
 
 function variable_te(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)

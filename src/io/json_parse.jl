@@ -83,6 +83,7 @@ function add_keys!(data::Dict{String,Any})
     for key in pms_keys
         !haskey(data, key) ? data[key] = Dict{String,Any}() : nothing
         "per_unit" == key ? data[key] = true : nothing
+        #"data_model" == key ? data[key] = _PMD.ENGINEERING : nothing
         "data_model" == key ? data[key] = _PMD.MATHEMATICAL : nothing
         "transformer" == key ? data[key] = Dict{String, Any}() : nothing
     end
@@ -175,10 +176,13 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         for k in keys_
             if haskey(branch, k)
                 info[k] = branch[k]
-            elseif k == "harden_cost"
-                info[k] = 0.0 # this places hardening into construction_cost
             end
         end
+
+        if !haskey(info, "can_harden") && info["is_new"] == false
+            info["can_harden"] = haskey(info, "harden_cost") ? true : false
+        end
+
     end
     pm_data["branch"]    = branch_data
     pm_data["branch_ne"] = branch_ne_data
@@ -275,10 +279,14 @@ function json2pm_bus!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
 
         #coordinates
         bus_data[id]["x"] = bus["x"]
-        bus_data[id]["y"] = bus["x"]
+        bus_data[id]["y"] = bus["y"]
 
+        # Things needed for an engineerng model
         bus_data[id]["terminals"] = collect(1:pm_data["conductors"])
         bus_data[id]["grounded"]  = fill(false, pm_data["conductors"])
+        bus_data[id]["status"]    = 1
+        bus_data[id]["rg"]        = [0.0, 0.0, 0.0]
+        bus_data[id]["xg"]        = [0.0, 0.0, 0.0]
     end
     pm_data["bus"] = bus_data
 end
@@ -315,9 +323,14 @@ function json2pm_load!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookup
         # critical
         load["is_critical"] ? load_data[id]["weight"] = 100 : load_data[id]["weight"] = 1
 
-        # add model type
         load_data[id]["model"] = _PMD.POWER
         load_data[id]["connections"] = [i for i in 1:pm_data["conductors"] if load["has_phase"][i]]
+        push!(load_data[id]["connections"], 4) # 4 = neutral
+        load_data[id]["configuration"] = _PMD.WYE
+        load_data[id]["bus"] = string(lookups[:bus][load["node_id"]])
+        load_data[id]["pd_nom"] = load_data[id]["pd"]
+        load_data[id]["qd_nom"] = load_data[id]["qd"]
+        load_data[id]["vm_nom"] = pm_data["bus"][string(lookups[:bus][load["node_id"]])]["vm"]
     end
     pm_data["load"] = load_data
 end

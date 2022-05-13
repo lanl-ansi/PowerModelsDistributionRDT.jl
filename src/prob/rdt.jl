@@ -5,7 +5,7 @@ function solve_rdt(data::Dict{String,Any}, model_type, solver; kwargs...)
 end
 
 function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
-#    variable_he(pm); # 1d h_e variables
+    variable_he(pm); # 1d h_e variables
 #    variable_te(pm); # 1d t_e variables        (could combined to w variables)
     variable_xe(pm); # 1d x_e variables
 #    variable_ue(pm); # 1d u_e variables
