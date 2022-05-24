@@ -108,6 +108,26 @@ function ref_add_branch_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     end
 end
 
+function ref_add_gen_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+    for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
+        nw_ref[:gen_ne] = Dict(x for x in get(nw_ref, :gen_ne, Dict()) if (x.second["gen_status"] != 0 && x.second["gen_bus"] in keys(nw_ref[:bus])))
+
+        bus_objs = Dict((i, Int[]) for (i,bus) in nw_ref[:bus])
+        for (i, obj) in nw_ref[:gen_ne]
+            push!(bus_objs[obj["gen_bus"]], i)
+        end
+        nw_ref[Symbol("bus_gen_nes")] = bus_objs
+
+        conns = Dict{Int,Vector{Tuple{Int,Vector{Int}}}}([(i, []) for (i, bus) in nw_ref[:bus]])
+        for (i, obj) in nw_ref[:gen_ne]
+            if obj["gen_status"] != 0
+                push!(conns[obj["gen_bus"]], (i, obj["connections"]))
+            end
+        end
+        nw_ref[Symbol("bus_conns_gen_ne")] = conns
+    end
+end
+
 
 function ref_add_branch_harden!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
@@ -242,6 +262,7 @@ end
 function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     ref_add_branch_ne!(ref, data)
     ref_add_branch_harden!(ref, data)
+    ref_add_gen_ne!(ref, data)
 #    ref_add_damaged_lines!(ref, data)
 #    ref_add_vm_imbalance!(ref, data)
 #    ref_add_pq_imbalance!(ref, data)

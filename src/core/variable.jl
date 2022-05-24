@@ -40,6 +40,26 @@ function variable_xe(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_d
     report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe, _PMD.ids(pm, nw, :branch_ne), xe)
 end
 
+function variable_ue(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
+    if relax
+        ue = _PMD.var(pm, nw)[:ue] = JuMP.@variable(pm.model,
+                [i in _PMD.ids(pm, nw, :gen_ne)],
+                base_name="$(nw)_ue",
+                lower_bound = 0,
+                upper_bound = 1,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), "ue_start", i, 0.0)
+             )
+    else
+        ue = _PMD.var(pm, nw)[:ue] = JuMP.@variable(pm.model,
+                [i in _PMD.ids(pm, nw, :gen_ne)],
+                base_name="$(nw)_ue",
+                binary = true,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), "ue_start", i, 0.0)
+             )
+     end
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :ue, _PMD.ids(pm, nw, :gen_ne), ue)
+end
+
 
 function variable_he(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
     if relax

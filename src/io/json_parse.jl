@@ -200,46 +200,49 @@ end
 # is_new                    Boolean to indicate whether or not this generator has to
 #                           be built.
 function json2pm_gen!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups)
-    gen_data = Dict{String,Any}()
+    gen_data    = Dict{String,Any}()
+    gen_ne_data = Dict{String,Any}()
+
     for (i, gen) in enumerate(data["generators"])
         id = string(i)
-        # information about gen
-        gen_data[id] = Dict{String,Any}()
-        gen_data[id]["name"] = gen["id"]
-        gen_data[id]["index"] = i
-        gen_data[id]["gen_bus"] = lookups[:bus][gen["node_id"]]
-        gen_data[id]["source_id"] = ["gen", i]
-        if !gen["is_new"]
-            gen_data[id]["gen_status"] = 1
-            if lookups[:type][gen["node_id"]] == 1
-                lookups[:type][gen["node_id"]] = 2
-            end
+        info = Dict{String,Any}()
+
+        if gen["is_new"]
+            gen_ne_data[id] = info
         else
-            gen_data[id]["gen_status"] = 0
+            gen_data[id] = info
         end
-        gen_data[id]["model"] = 2
+
+        # information about gen
+        info["name"] = gen["id"]
+        info["index"] = i
+        info["gen_bus"] = lookups[:bus][gen["node_id"]]
+        info["source_id"] = ["gen", i]
+        info["gen_status"] = 1
+        info["model"] = 2
 
         # active phases
-        gen_data[id]["active_phases"] = [i for i in 1:pm_data["conductors"] if gen["has_phase"][i]]
+        info["active_phases"] = [i for i in 1:pm_data["conductors"] if gen["has_phase"][i]]
 
         # gen parameters
-        gen_data[id]["pg"] = Array{Float64,1}([0 for i in 1:pm_data["conductors"]])
-        gen_data[id]["qg"] = Array{Float64,1}([0 for i in 1:pm_data["conductors"]])
-        gen_data[id]["pmax"] = Array{Float64,1}(gen["max_real_phase"])
-        gen_data[id]["pmin"] = Array{Float64,1}([0.0 for i in 1:pm_data["conductors"]])
-        gen_data[id]["qmax"] = Array{Float64,1}(gen["max_reactive_phase"])
-        gen_data[id]["qmin"] = -Array{Float64,1}(gen["max_reactive_phase"])
+        info["pg"] = Array{Float64,1}([0 for i in 1:pm_data["conductors"]])
+        info["qg"] = Array{Float64,1}([0 for i in 1:pm_data["conductors"]])
+        info["pmax"] = Array{Float64,1}(gen["max_real_phase"])
+        info["pmin"] = Array{Float64,1}([0.0 for i in 1:pm_data["conductors"]])
+        info["qmax"] = Array{Float64,1}(gen["max_reactive_phase"])
+        info["qmin"] = -Array{Float64,1}(gen["max_reactive_phase"])
         # voltage ref
-        gen_data[id]["vg"] = Array{Float64,1}(convert(Array{Float64}, data["buses"][lookups[:bus][gen["node_id"]]]["ref_voltage"]))
+        info["vg"] = Array{Float64,1}(convert(Array{Float64}, data["buses"][lookups[:bus][gen["node_id"]]]["ref_voltage"]))
 
-        gen_data[id]["microgrid_cost"] = gen["microgrid_cost"]
+        info["microgrid_cost"] = gen["microgrid_cost"]
         # applys generic cost
-        gen_data[id]["ncost"] = 3
-        gen_data[id]["cost"] = [0.0, 1.0, 0.0]
+        info["ncost"] = 3
+        info["cost"] = [0.0, 1.0, 0.0]
 
-        gen_data[id]["connections"] = collect(1:pm_data["conductors"])
+        info["connections"] = collect(1:pm_data["conductors"])
     end
-    pm_data["gen"] = gen_data
+    pm_data["gen"]    = gen_data
+    pm_data["gen_ne"] = gen_ne_data
 end
 
 
