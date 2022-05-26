@@ -108,6 +108,35 @@ function ref_add_branch_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     end
 end
 
+function ref_add_switch_inline_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+    for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
+        ### filter out inactive components ###
+        nw_ref[:switch_inline_ne] = Dict(x for x in get(nw_ref, :switch_inline_ne, Dict()) if (x.second["status"] != 0 && x.second["f_bus"] in keys(nw_ref[:bus]) && x.second["t_bus"] in keys(nw_ref[:bus])))
+
+        ### setup arcs from edges ###
+        nw_ref[:arcs_switch_inline_ne_from] = [(i,branch["f_bus"],branch["t_bus"]) for (i,branch) in nw_ref[:switch_inline_ne]]
+        nw_ref[:arcs_switch_inline_ne_to]   = [(i,branch["t_bus"],branch["f_bus"]) for (i,branch) in nw_ref[:switch_inline_ne]]
+        nw_ref[:arcs_switch_inline_ne]      = [nw_ref[:arcs_switch_inline_ne_from]; nw_ref[:arcs_switch_inline_ne_to]]
+
+        ### bus connected component lookups ###
+        bus_arcs = Dict((i, Tuple{Int,Int,Int}[]) for (i,bus) in nw_ref[:bus])
+        for (l,i,j) in nw_ref[:arcs_switch_inline_ne]
+            push!(bus_arcs[i], (l,i,j))
+        end
+        nw_ref[:bus_arcs_switch_inline_ne] = bus_arcs
+
+        ### connections
+        conns = Dict{Int,Vector{Tuple{Tuple{Int,Int,Int},Vector{Int}}}}([(i, []) for (i, bus) in nw_ref[:bus]])
+        for (i, obj) in nw_ref[:switch_inline_ne]
+            push!(conns[obj["f_bus"]], ((obj["index"], obj["f_bus"], obj["t_bus"]), obj["f_connections"]))
+            if obj["f_bus"] != obj["t_bus"]
+                push!(conns[obj["t_bus"]], ((obj["index"], obj["t_bus"], obj["f_bus"]), obj["t_connections"]))
+            end
+        end
+        nw_ref[:bus_arcs_conns_switch_inline_ne] = conns
+    end
+end
+
 function ref_add_gen_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
         nw_ref[:gen_ne] = Dict(x for x in get(nw_ref, :gen_ne, Dict()) if (x.second["gen_status"] != 0 && x.second["gen_bus"] in keys(nw_ref[:bus])))
@@ -263,6 +292,7 @@ function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     ref_add_branch_ne!(ref, data)
     ref_add_branch_harden!(ref, data)
     ref_add_gen_ne!(ref, data)
+    ref_add_switch_inline_ne!(ref,data)
 #    ref_add_damaged_lines!(ref, data)
 #    ref_add_vm_imbalance!(ref, data)
 #    ref_add_pq_imbalance!(ref, data)

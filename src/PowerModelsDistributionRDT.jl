@@ -24,6 +24,7 @@ module PowerModelsDistributionRDT
     include("core/constraint.jl")
     include("core/data.jl")
     include("core/objective.jl")
+    include("core/eng2math.jl")
 
     include("io/common.jl")
     include("io/json_parse.jl")

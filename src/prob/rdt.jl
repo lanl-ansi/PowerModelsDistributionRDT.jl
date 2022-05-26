@@ -1,12 +1,12 @@
 
 function solve_rdt(data::Dict{String,Any}, model_type, solver; kwargs...)
     #return _PMs.run_model(data, model_type, solver, build_mc_rdt; multiconductor=true, multinetwork=true, ref_extensions=[ref_add_rdt!], kwargs...)
-    return _PMD.solve_mc_model(data, model_type, solver, build_mc_rdt; multinetwork=true, ref_extensions=[ref_add_rdt!], kwargs...)
+    return _PMD.solve_mc_model(data, model_type, solver, build_mc_rdt; multinetwork=true, ref_extensions=[ref_add_rdt!], eng2math_extensions=[transform_switch_inline_ne!,transform_switch_inline!], kwargs...)
 end
 
 function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
     variable_he(pm); # 1d h_e variables
-#    variable_te(pm); # 1d t_e variables        (could combined to w variables)
+    variable_te(pm); # 1d t_e variables
     variable_xe(pm); # 1d x_e variables
     variable_ue(pm); # 1d u_e variables
 

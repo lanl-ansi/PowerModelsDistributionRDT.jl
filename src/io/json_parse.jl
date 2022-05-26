@@ -48,6 +48,12 @@ function json_to_powermodels(data::Dict{String,Any})
     pm_data["settings"] = get(pm_data,"settings", Dict{String,Any}("sbase_default" => get(data, "baseMVA", 1e6)))
     add_keys!(pm_data)
     correct_network_data!(pm_data)
+
+    # the legacy LPNORM data format is a mix of a math model and an engineering model, so it is classified as a math model
+    # so, so ome eng2math functions must be called manually
+    transform_switch_inline_ne!(pm_data, pm_data)
+    transform_switch_inline!(pm_data, pm_data)
+
     haskey(data,"scenarios") ? json2pm_scenarios!(data, pm_data, lookups) : println("No scenarios found in file")
     haskey(pm_data, "scenarios") ?  mn_data = _PMs.replicate(pm_data, length(keys(pm_data["scenarios"]))+1, global_keys=global_keys) : mn_data = pm_data
 
@@ -83,7 +89,6 @@ function add_keys!(data::Dict{String,Any})
     for key in pms_keys
         !haskey(data, key) ? data[key] = Dict{String,Any}() : nothing
         "per_unit" == key ? data[key] = true : nothing
-        #"data_model" == key ? data[key] = _PMD.ENGINEERING : nothing
         "data_model" == key ? data[key] = _PMD.MATHEMATICAL : nothing
         "transformer" == key ? data[key] = Dict{String, Any}() : nothing
     end
@@ -157,7 +162,7 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         info["active_phases"] = [i for i in 1:pm_data["conductors"] if branch["has_phase"][i]]
 
         # switch
-        info["switch"] = branch["has_switch"]
+        info["has_switch"] = branch["has_switch"]
 
         # capacity
         info["rate_a"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])

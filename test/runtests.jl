@@ -45,5 +45,6 @@ juniper_solver = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" =
 
 
 @testset "microgrid" begin
+    include("transform.jl")
     include("rdt.jl")
 end
