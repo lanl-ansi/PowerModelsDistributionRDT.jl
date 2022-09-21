@@ -50,7 +50,7 @@
 #    end
 #end
 
-#function ref_add_damaged_lines!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+function ref_add_damaged_lines!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
 #    if _INs.ismultinetwork(data)
 #        nws_data = data["nw"]
 #    else
@@ -72,7 +72,12 @@
 #        end
 #    end
 #    ref[:arcs_damaged_all] = hold
-#end
+
+    for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
+#        for i in nw_ref[:disabled_lines]
+#        end
+    end
+end
 
 function ref_add_branch_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
@@ -293,7 +298,7 @@ function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     ref_add_branch_harden!(ref, data)
     ref_add_gen_ne!(ref, data)
     ref_add_switch_inline_ne!(ref,data)
-#    ref_add_damaged_lines!(ref, data)
+    ref_add_damaged_lines!(ref, data)
 #    ref_add_vm_imbalance!(ref, data)
 #    ref_add_pq_imbalance!(ref, data)
 #    ref_add_subtour!(ref, data)

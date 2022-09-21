@@ -61,12 +61,14 @@ function json_to_powermodels(data::Dict{String,Any})
     delete!(mn_data["nw"], string(length(keys(pm_data["scenarios"]))+1))
 
     println("Need to actually use the damage information in the scenarios to define stuff!!!!!")
+    println("Need to check if lines get changed into transfoerms.... and where")
 
     # not sure why this isn't getting replicated
     for n in keys(mn_data["nw"])
         mn_data["nw"][n]["per_unit"] = pm_data["per_unit"]
     end
 
+    scenarios2_mn!(mn_data, lookups)
     return mn_data
 end
 
@@ -130,7 +132,7 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         info = Dict{String,Any}()
 
         if branch["is_new"]
-            branch_ne_data[id]  = info
+            branch_ne_data[id] = info
         else
             branch_data[id] = info
         end
@@ -349,7 +351,6 @@ end
 # id                             A string that uniquely identifies the scenario
 # hardened_disabled_lines        An array of power lines that are damaged after being
 #                                hardened
-# disabled_communication_lines   An array of communication lines that are damaged
 # disabled_lines                 An array of power lines that are damaged
 #
 function json2pm_scenarios!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups)
@@ -359,9 +360,9 @@ function json2pm_scenarios!(data::Dict{String,Any}, pm_data::Dict{String,Any}, l
         # information about senarios
         scenario_data[id] = Dict{String,Any}()
         scenario_data[id]["name"] = s["id"]
-        haskey(s, "disable_lines") ? scenario_data[id]["disabled_lines"] = [string(lookups[:branch_names][i]) for i in s["disable_lines"]] : nothing
-        haskey(s, "hardened_disabled_lines") ? scenario_data[id]["hardened_disabled_lines"] = [string(lookups[:branch_names][i]) for i in s["hardened_disabled_lines"]] : nothing
-        haskey(s, "disabled_communication_lines") ? scenario_data[id]["disabled_communication_lines"] = [string(lookups[:branch_names][i]) for i in s["disabled_communication_lines"]] : nothing
+
+        haskey(s, "disable_lines") ? scenario_data[id]["disabled_lines"] = [string(lookups[:branch_names][j]) for j in s["disable_lines"]] : nothing
+        haskey(s, "hardened_disabled_lines") ? scenario_data[id]["hardened_disabled_lines"] = [string(lookups[:branch_names][j]) for j in s["hardened_disabled_lines"]] : nothing
     end
     pm_data["scenarios"] = scenario_data
 end
@@ -394,4 +395,44 @@ function make_zeros()
     conductors = 3
     value = zeros(Float64, 3, 3)
     return value
+end
+
+function scenarios2_mn!(data::Dict{String,Any}, lookups::Dict{Symbol,Any})
+    for (nw, pm_data) in data["nw"]
+        pm_data["damaged_branch"] = []
+        pm_data["damaged_hardened_branch"] = []
+        pm_data["damaged_branch_ne"] = []
+        pm_data["damaged_transformer"] = []
+        pm_data["damaged_hardened_transformer"] = []
+    end
+
+    for (s, scenario) in data["scenarios"]
+        pm_data = data["nw"][s]
+
+        for i in scenario["hardened_disabled_lines"]
+            id = i
+            if haskey(pm_data["branch"], id)
+              push!(pm_data["damaged_hardened_branch"], id)
+            elseif haskey(pm_data["transformer"], id)
+              push!(pm_data["damaged_hardened_transformer"], id)
+            else
+              Memento.warn(_LOGGER, "I/O error: hardened disabled line identifier $(i) not found")
+            end
+        end
+
+        for i in scenario["disabled_lines"]
+            id = i
+            if haskey(pm_data["branch"], id)
+              push!(pm_data["damaged_branch"], id)
+          elseif haskey(pm_data["branch_ne"], id)
+              push!(pm_data["damaged_branch_ne"], id)
+            elseif haskey(pm_data["transformer"], id)
+              push!(pm_data["damaged_transformer"], id)
+            else
+              Memento.warn(_LOGGER, "I/O error: disabled line identifier $(i) not found")
+            end
+        end
+    end
+
+    delete!(data, "scenarios")
 end

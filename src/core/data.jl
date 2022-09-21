@@ -30,14 +30,6 @@ function gen_scenarios(filePath::String, data::Dict{String,Any})
 end
 # ["model", "name", "status", "active_phases", "qd", "vnom_kv", "source_id", "load_bus", "index", "conn", "pd"]
 
-function add_scenario_data!(data::Dict{String,Any})
-    for (s, scenario) in data["scenarios"]
-        data["nw"][s]["hardened_disabled_lines"] = scenario["hardened_disabled_lines"]
-        data["nw"][s]["disabled_lines"] = scenario["disabled_lines"]
-    end
-    delete!(data, "scenarios")
-end
-
 function correct_network_data!(data::Dict{String,Any})
     _PMs.check_connectivity(data)
     _PMs.correct_transformer_parameters!(data)

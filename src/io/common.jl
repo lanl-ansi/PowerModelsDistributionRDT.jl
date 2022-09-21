@@ -8,9 +8,7 @@ function parse_file(file::String; kwargs...)
         pmd_data = _PMD.parse_file(file; kwargs...)
     elseif filetype == "json"
         pmd_data = parse_json(io)
-        add_scenario_data!(pmd_data)
     end
     # add_load_weights!(pmd_data)
     return pmd_data
 end
-

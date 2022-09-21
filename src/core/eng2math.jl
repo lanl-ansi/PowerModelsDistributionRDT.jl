@@ -71,13 +71,13 @@ function transform_switch_inline!(data_math::Dict{String,Any}, data_eng::Dict{St
 end
 
 
-
 # Function looks for all lines where switches cab be added (expanded) and creates ne_switches in these
 # locations, which are always closed if unbuilt
 function transform_switch_inline_ne!(data_math::Dict{String,Any}, data_eng::Dict{String,Any})
-    switch_inline_ne_data         = Dict{String,Any}()
+    switch_inline_ne_data         = get(data_math, "switch_inline_ne", Dict{String,Any}())
 
     virtual_bus_id = calc_unique_virtual_bus_id_start(data_math)
+    unique_switch_id = 0
 
     for (i, branch) in data_math["branch"]
         if get(branch, "can_add_switch", false) == true || (get(branch, "switch_cost", 0.0) > 0.0 && get(branch, "has_switch", false) == false)
@@ -94,6 +94,12 @@ function transform_switch_inline_ne!(data_math::Dict{String,Any}, data_eng::Dict
             # create the switch
             switch_info           = Dict{String,Any}()
             switch_id             = string(i)
+            if haskey(switch_inline_ne_data,i)
+                switch_id = string(unique_switch_id)
+                unique_switch_id = unique_switch_id + 1
+            else
+                unique_switch_id = max(unique_switch_id, parse(Int64,i) + 1)
+            end
 
             # information about the switch
             switch_info["name"]          = switch_id
