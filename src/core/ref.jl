@@ -50,35 +50,6 @@
 #    end
 #end
 
-function ref_add_damaged_lines!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-#    if _INs.ismultinetwork(data)
-#        nws_data = data["nw"]
-#    else
-#        nws_data = Dict("0" => data)
-#    end
-#    hold = Array{Tuple{Int64,Int64,Int64},1}()
-#    for (n, nw_data) in nws_data
-#        nw_id = parse(Int, n)
-#        nw_ref = ref[:nw][nw_id]
-#        nw_ref[:arcs_damaged] = Array{Tuple{Int64,Int64,Int64},1}()
-#        for i in nw_ref[:disabled_lines]
-#            branch = nw_ref[:branch][parse(Int, i)]
-#            branch["is_new"] ? nothing : push!(nw_ref[:arcs_damaged], (parse(Int, i),branch["t_bus"],branch["f_bus"]))
-#            if (parse(Int, i),branch["t_bus"],branch["f_bus"]) in hold
-#                nothing
-#            else
-#                branch["is_new"] ? nothing : push!(hold, (parse(Int, i),branch["t_bus"],branch["f_bus"]))
-#            end
-#        end
-#    end
-#    ref[:arcs_damaged_all] = hold
-
-    for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
-#        for i in nw_ref[:disabled_lines]
-#        end
-    end
-end
-
 function ref_add_branch_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
         ### filter out inactive components ###
@@ -298,7 +269,6 @@ function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     ref_add_branch_harden!(ref, data)
     ref_add_gen_ne!(ref, data)
     ref_add_switch_inline_ne!(ref,data)
-    ref_add_damaged_lines!(ref, data)
 #    ref_add_vm_imbalance!(ref, data)
 #    ref_add_pq_imbalance!(ref, data)
 #    ref_add_subtour!(ref, data)

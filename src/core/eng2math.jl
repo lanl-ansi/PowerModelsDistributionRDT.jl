@@ -127,3 +127,51 @@ function transform_switch_inline_ne!(data_math::Dict{String,Any}, data_eng::Dict
 
     data_math["switch_inline_ne"] = switch_inline_ne_data
 end
+
+
+# Function that looks for branches labeled as a tranformer and moves them to the appropriate location
+function transform_branch2transformer!(data_math::Dict{String,Any}, data_eng::Dict{String,Any})
+    transformer_ne_data         = get(data_math, "transformer_ne", Dict{String,Any}())
+    transformer_data            = get(data_math, "transformer", Dict{String,Any}())
+
+
+
+    ids_to_remove = []
+    for (i, branch) in data_math["branch"]
+        if get(branch, "transformer", false) == true
+            push!(ids_to_remove, i)
+            nphases = length(branch["f_connections"])
+            branch["status"]        = get(branch, "status", branch["br_status"])
+            branch["configuration"] = get(branch, "configuration", _PMD.WYE)
+            branch["tm_set"]        = get(branch, "tm_set", fill(1.0, nphases))
+            branch["tm_nom"]        = get(branch, "tm_nom", 1.0)
+            branch["polarity"]      = get(branch, "polarity", -1)
+
+            transformer_data[i]     = branch
+        end
+    end
+    for i in ids_to_remove
+        delete!(data_math["branch"], i)
+    end
+
+    ids_to_remove = []
+    for (i, branch) in data_math["branch_ne"]
+        if get(branch, "transformer", false) == true
+            push!(ids_to_remove, i)
+            nphases = length(branch["f_connections"])
+            branch["status"]        = get(branch, "status", branch["br_status"])
+            branch["configuration"] = get(branch, "configuration", _PMD.WYE)
+            branch["tm_set"]        = get(branch, "tm_set", fill(1.0, nphases))
+            branch["tm_nom"]        = get(branch, "tm_nom", 1.0)
+            branch["polarity"]        = get(branch, "polarity", -1)
+
+            transformer_ne_data[i]  = branch
+        end
+    end
+    for i in ids_to_remove
+        delete!(data_math["branch_ne"], i)
+    end
+
+    data_math["transformer_ne"] = transformer_ne_data
+    data_math["transformer"]    = transformer_data
+end

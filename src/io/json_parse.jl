@@ -54,14 +54,13 @@ function json_to_powermodels(data::Dict{String,Any})
     transform_switch_inline_ne!(pm_data, pm_data)
     transform_switch_inline!(pm_data, pm_data)
 
+    transform_branch2transformer!(pm_data, pm_data)
+
     haskey(data,"scenarios") ? json2pm_scenarios!(data, pm_data, lookups) : println("No scenarios found in file")
     haskey(pm_data, "scenarios") ?  mn_data = _PMs.replicate(pm_data, length(keys(pm_data["scenarios"]))+1, global_keys=global_keys) : mn_data = pm_data
 
     mn_data["nw"]["0"] = mn_data["nw"][string(length(keys(pm_data["scenarios"]))+1)]
     delete!(mn_data["nw"], string(length(keys(pm_data["scenarios"]))+1))
-
-    println("Need to actually use the damage information in the scenarios to define stuff!!!!!")
-    println("Need to check if lines get changed into transfoerms.... and where")
 
     # not sure why this isn't getting replicated
     for n in keys(mn_data["nw"])
@@ -69,6 +68,7 @@ function json_to_powermodels(data::Dict{String,Any})
     end
 
     scenarios2_mn!(mn_data, lookups)
+
     return mn_data
 end
 
@@ -297,6 +297,7 @@ function json2pm_bus!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
         bus_data[id]["status"]    = 1
         bus_data[id]["rg"]        = [0.0, 0.0, 0.0]
         bus_data[id]["xg"]        = [0.0, 0.0, 0.0]
+        bus_data[id]["base_kv"]   = 1.0
     end
     pm_data["bus"] = bus_data
 end
