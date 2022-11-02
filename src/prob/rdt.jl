@@ -24,8 +24,8 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #        variable_branch_be(pm) # b_e variables
 
          variable_xe_s(pm; nw=n) # x_e variables
-         variable_ze_s(pm; nw=n) # z_e variables 
-#        variable_he_s(pm; nw=n) # h_e variables constraint 1c
+         variable_ze_s(pm; nw=n) # z_e variables
+         variable_he_s(pm; nw=n) # h_e variables constraint 1c
          _PMD.variable_mc_switch_state(pm; nw=n) # t_e variables
 #        variable_ye_s(pm; nw=n) # # y_e variables
 
