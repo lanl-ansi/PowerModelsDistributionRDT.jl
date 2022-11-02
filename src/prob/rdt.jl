@@ -25,13 +25,29 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
          variable_xe_s(pm; nw=n) # x_e variables
          variable_ze_s(pm; nw=n) # z_e variables
          variable_he_s(pm; nw=n) # h_e variables
-         variable_ue_s(pm; nw=n) # h_e variables
+         variable_ue_s(pm; nw=n) # u_e variables
          _PMD.variable_mc_switch_state(pm; nw=n) # t_e variables
+         variable_mc_switch_inline_ne_state(pm; nw=n) # t_e variables
 #        variable_ye_s(pm; nw=n) # # y_e variables
 
-        variable_mc_switch_inline_ne_state(pm; nw=n) # t_e variables
+        for i in _PMD.ids(pm, n, :gen_ne)
+            constraint_ue(pm, i; nw=n) # constraint 1b for u variables
+        end
 
-#        constraint_variable(pm; nw=n); # constraint 1b
+        for i in _PMD.ids(pm, n, :branch_ne)
+            constraint_xe(pm, i; nw=n) # constraint 1b for x variables
+        end
+
+        for i in _PMD.ids(pm, n, :switch_inline_ne)
+            constraint_te(pm, i; nw=n) # constraint 1b for t variables
+        end
+
+        for i in _PMD.ids(pm, n, :branch_harden)
+            constraint_he(pm, i; nw=n) # constraint 1b for h variables
+        end
+
+
+
 #        constraint_switch(pm; nw=n); # constraint 6a
 #        constraint_active_line(pm; nw=n); # constraint 6b
 
