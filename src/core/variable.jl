@@ -159,3 +159,28 @@ end
 #    binary = true,
 #    start = 0)
 #end
+
+
+"switch_inline_ne state (open/close) variables"
+function variable_mc_switch_inline_ne_state(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, report::Bool=true, relax::Bool=false)
+    if relax
+        state = _PMD.var(pm, nw)[:switch_inline_ne_state] = JuMP.@variable(
+            pm.model,
+            [l in _PMD.ids(pm, nw, :switch_inline_ne)],
+            base_name="$(nw)_switch_inline_ne_state_$(l)",
+            lower_bound = 0,
+            upper_bound = 1,
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :switch_inline_ne, l), "state_start", 0)
+        )
+    else
+        state = _PMD.var(pm, nw)[:switch_inline_ne_state] = JuMP.@variable(
+            pm.model,
+            [l in _PMD.ids(pm, nw, :switch_inline_ne)],
+            base_name="$(nw)_switch_inline_ne_state_$(l)",
+            binary = true,
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :switch_inline_ne, l), "state_start", 0)
+        )
+    end
+
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :switch_inline_ne_state, _PMD.ids(pm, nw, :switch_inline_ne), state)
+end

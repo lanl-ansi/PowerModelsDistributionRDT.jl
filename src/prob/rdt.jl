@@ -26,14 +26,18 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #        variable_xe_s(pm; nw=n) # x_e variables constraint 1c
 #        variable_te_s(pm; nw=n) # t_e variables constraint 1c
 #        variable_he_s(pm; nw=n) # h_e variables constraint 1c
-#        variable_z_branch(pm; nw=n) # # z_e variables
+         _PMD.variable_mc_switch_state(pm; nw=n) # # z_e variables
 #        variable_ye_s(pm; nw=n) # # y_e variables
+
+        variable_mc_switch_inline_ne_state(pm; nw=n)
 
 #        constraint_variable(pm; nw=n); # constraint 1b
 #        constraint_switch(pm; nw=n); # constraint 6a
 #        constraint_active_line(pm; nw=n); # constraint 6b
 
         _PMD.constraint_mc_model_voltage(pm; nw=n);   # Some forms of the power flow equations have special constraints to link voltages together.  Most power flow models don't use this
+
+# need an accurate constraint for "switch_inline_ne" to interpret them correction
 
 #        for i in _PMs.ids(pm, :bus_bal)
 #            constraint_mc_vm_vuf(pm, i) # voltage imbalance constraint
