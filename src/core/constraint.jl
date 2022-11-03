@@ -8,7 +8,7 @@ end
 
 function constraint_xe(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::Int, branch::Int)
     xe = _PMD.var(pm, base_nw, :xe, branch)
-    xe_s = _PMD.var(pm, nw, :xe_s_ne, branch)
+    xe_s = _PMD.var(pm, nw, :xe_s, branch)
 
     JuMP.@constraint(pm.model, xe >= xe_s)
 end
@@ -17,7 +17,7 @@ function constraint_te(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::
     te = _PMD.var(pm, base_nw, :te, switch)
     te_s = _PMD.var(pm, nw, :switch_inline_ne_state, switch)
 
-    JuMP.@constraint(pm.model, te >= te_s)
+    JuMP.@constraint(pm.model, te >= 1-te_s)
 end
 
 function constraint_he(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::Int, branch::Int)

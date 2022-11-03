@@ -27,7 +27,7 @@ function transform_switch_inline!(data_math::Dict{String,Any}, data_eng::Dict{St
     unique_switch_id = calc_unique_switch_id_start(data_math)
 
     for (i, branch) in data_math["branch"]
-        if get(branch, "has_switch", false) == false
+        if get(branch, "has_switch", false) == true
             # create the virtual bus
             bus_id = string(virtual_bus_id)
 

@@ -23,7 +23,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #        variable_branch_be(pm) # b_e variables
 
          variable_xe_s(pm; nw=n) # x_e variables
-         variable_ze_s(pm; nw=n) # z_e variables
+#         variable_ze_s(pm; nw=n) # z_e variables - may not need because switches are distinct objects now
          variable_he_s(pm; nw=n) # h_e variables
          variable_ue_s(pm; nw=n) # u_e variables
          _PMD.variable_mc_switch_state(pm; nw=n) # t_e variables
@@ -63,7 +63,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             _PMD.constraint_mc_theta_ref(pm, i; nw=n) # slack bus constraint
         end
 
-        _PMD.constraint_mc_bus_voltage_on_off(pm; nw=n) # allow voltages to go to zero if the bus is turned off.  Not in the paper but the analgoue of constraint (2e)
+#        _PMD.constraint_mc_bus_voltage_on_off(pm; nw=n) # allow voltages to go to zero if the bus is turned off.  Not in the paper but the analgoue of constraint (2e)
 
         for i in _PMD.ids(pm, :gen; nw=n)
 #            _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n)
@@ -77,15 +77,15 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #            constraint_mc_ohms_yt_from(pm, i; nw=n) # defines pij on z_e
 #            constraint_mc_ohms_yt_to(pm, i; nw=n) # defines pji on z_e
 
-            _PMD.constraint_mc_voltage_angle_difference(pm, i; nw=n) # not in paper, but fine to include
+#            _PMD.constraint_mc_voltage_angle_difference(pm, i; nw=n) # not in paper, but fine to include
 
-            _PMD.constraint_mc_thermal_limit_from(pm, i; nw=n) # not in paper, but fine to include
-            _PMD.constraint_mc_thermal_limit_to(pm, i; nw=n) # not in paper, but fine to include
+#            _PMD.constraint_mc_thermal_limit_from(pm, i; nw=n) # not in paper, but fine to include
+#            _PMD.constraint_mc_thermal_limit_to(pm, i; nw=n) # not in paper, but fine to include
 #            constraint_cycle_function(pm, i; nw=n)
         end
 
         for i in _PMD.ids(pm, :transformer; nw=n)
-            _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
+#            _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
         end
 
 #        for i in _PMs.ids(pm, :arcs_bal)
@@ -102,9 +102,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #        end
 
         for i in _PMD.ids(pm, :switch; nw=n)
-            _PMD.constraint_mc_switch_state(pm, i; nw=n)
-            _PMD.constraint_mc_switch_thermal_limit(pm, i; nw=n)
-            _PMD.constraint_mc_switch_ampacity(pm, i; nw=n)
+#            _PMD.constraint_mc_switch_state(pm, i; nw=n)
+#            _PMD.constraint_mc_switch_thermal_limit(pm, i; nw=n)
+#            _PMD.constraint_mc_switch_ampacity(pm, i; nw=n)
         end
     end
 

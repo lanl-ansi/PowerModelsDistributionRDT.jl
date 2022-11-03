@@ -105,20 +105,6 @@ end
 function variable_xe_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
     if relax
         xe_s = _PMD.var(pm, nw)[:xe_s] = JuMP.@variable(pm.model,
-                [i in _PMD.ids(pm, nw, :branch)],
-                base_name="$(nw)_xe_s",
-                lower_bound = 0,
-                upper_bound = 1,
-                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "xe_start", i, 0.0)
-             )
-        xe_s_xfr = _PMD.var(pm, nw)[:xe_s_xfr] = JuMP.@variable(pm.model,
-                [i in _PMD.ids(pm, nw, :transformer)],
-                base_name="$(nw)_xe_s_xfr",
-                lower_bound = 0,
-                upper_bound = 1,
-                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :transformer, i), "xe_start", i, 0.0)
-              )
-        xe_s_ne = _PMD.var(pm, nw)[:xe_s_ne] = JuMP.@variable(pm.model,
                 [i in _PMD.ids(pm, nw, :branch_ne)],
                 base_name="$(nw)_xe_s_ne",
                 lower_bound = 0,
@@ -127,27 +113,13 @@ function variable_xe_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id
               )
     else
         xe_s = _PMD.var(pm, nw)[:xe_s] = JuMP.@variable(pm.model,
-                [i in _PMD.ids(pm, nw, :branch)],
-                base_name="$(nw)_xe_s",
-                binary = true,
-                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "xe_start", i, 0.0)
-             )
-        xe_s_xfr = _PMD.var(pm, nw)[:xe_s_xfr] = JuMP.@variable(pm.model,
-                    [i in _PMD.ids(pm, nw, :transformer)],
-                    base_name="$(nw)_xe_s_xfr",
-                    binary = true,
-                    start=_PMD.comp_start_value(_PMD.ref(pm, nw, :transformer, i), "xe_start", i, 0.0)
-            )
-        xe_s_ne = _PMD.var(pm, nw)[:xe_s_ne] = JuMP.@variable(pm.model,
                      [i in _PMD.ids(pm, nw, :branch_ne)],
                      base_name="$(nw)_xe_s_ne",
                      binary = true,
                      start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
             )
      end
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :xe_s, _PMD.ids(pm, nw, :branch), xe_s)
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :transformer, :xe_s_xfr, _PMD.ids(pm, nw, :transformer), xe_s_xfr)
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe_s_ne, _PMD.ids(pm, nw, :branch_ne), xe_s_ne)
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe_s, _PMD.ids(pm, nw, :branch_ne), xe_s)
 end
 
 function variable_ze_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
