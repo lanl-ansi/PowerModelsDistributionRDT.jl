@@ -4,10 +4,10 @@ function solve_rdt(data::Dict{String,Any}, model_type, solver; kwargs...)
 end
 
 function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
-    variable_he(pm; relax=true); # 1d h_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
+    variable_he(pm); # 1d h_e variables
     variable_te(pm; relax=true); # 1d t_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
-    variable_xe(pm; relax=true); # 1d x_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
-    variable_ue(pm; relax=true); # 1d u_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
+    variable_xe(pm); # 1d x_e variables
+    variable_ue(pm); # 1d u_e variables
 
     for n in _INs.nw_ids(pm, _PMD.pmd_it_sym)
         _PMD.variable_mc_bus_voltage_indicator(pm; nw=n, relax=true);
@@ -22,10 +22,10 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 
 #        variable_branch_be(pm) # b_e variables
 
-         variable_xe_s(pm; nw=n) # x_e variables
+         variable_xe_s(pm; nw=n, relax=true) # x_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
 #         variable_ze_s(pm; nw=n) # z_e variables - may not need because switches are distinct objects now
-         variable_he_s(pm; nw=n) # h_e variables
-         variable_ue_s(pm; nw=n) # u_e variables
+         variable_he_s(pm; nw=n, relax=true) # h_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
+         variable_ue_s(pm; nw=n, relax=true) # u_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
          _PMD.variable_mc_switch_state(pm; nw=n) # t_e variables
          variable_mc_switch_inline_ne_state(pm; nw=n) # t_e variables
 #        variable_ye_s(pm; nw=n) # # y_e variables

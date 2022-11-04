@@ -3,14 +3,14 @@ function constraint_ue(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::
     ue = _PMD.var(pm, base_nw, :ue, gen)
     ue_s = _PMD.var(pm, nw, :ue_s, gen)
 
-    JuMP.@constraint(pm.model, ue >= ue_s)
+    JuMP.@constraint(pm.model, ue == ue_s)
 end
 
 function constraint_xe(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::Int, branch::Int)
     xe = _PMD.var(pm, base_nw, :xe, branch)
     xe_s = _PMD.var(pm, nw, :xe_s, branch)
 
-    JuMP.@constraint(pm.model, xe >= xe_s)
+    JuMP.@constraint(pm.model, xe == xe_s)
 end
 
 function constraint_te(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::Int, switch::Int)
@@ -24,7 +24,7 @@ function constraint_he(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::
     he = _PMD.var(pm, base_nw, :he, branch)
     he_s = _PMD.var(pm, nw, :he_s, branch)
 
-    JuMP.@constraint(pm.model, he >= he_s)
+    JuMP.@constraint(pm.model, he == he_s)
 end
 
 
