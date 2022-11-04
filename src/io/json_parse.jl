@@ -186,6 +186,10 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
             end
         end
 
+        if branch["is_new"] == true && !haskey(info, "construction_cost")
+            info["construction_cost"] = 0
+        end
+
         if !haskey(info, "can_harden") && info["is_new"] == false
             info["can_harden"] = haskey(info, "harden_cost") ? true : false
         end

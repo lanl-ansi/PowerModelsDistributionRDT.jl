@@ -1,18 +1,18 @@
 
 
-function constraint_ue(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=pm.cnw, base_nw::Int=_PMD.nw_id_default)
+function constraint_ue(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=_PMD.nw_id_default, base_nw::Int=_PMD.nw_id_default)
     constraint_ue(pm, nw, base_nw, i)
 end
 
-function constraint_xe(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=pm.cnw, base_nw::Int=_PMD.nw_id_default)
+function constraint_xe(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=_PMD.nw_id_default, base_nw::Int=_PMD.nw_id_default)
     constraint_xe(pm, nw, base_nw, i)
 end
 
-function constraint_te(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=pm.cnw, base_nw::Int=_PMD.nw_id_default)
+function constraint_te(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=_PMD.nw_id_default, base_nw::Int=_PMD.nw_id_default)
     constraint_te(pm, nw, base_nw, i)
 end
 
-function constraint_he(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=pm.cnw, base_nw::Int=_PMD.nw_id_default)
+function constraint_he(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=_PMD.nw_id_default, base_nw::Int=_PMD.nw_id_default)
     constraint_he(pm, nw, base_nw, i)
 end
 
