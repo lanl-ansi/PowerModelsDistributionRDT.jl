@@ -53,14 +53,31 @@ end
 #end
 
 
-#function constraint_critical_load(pm::_PMs.AbstractPowerModel, nw::Int)
-#    haskey(_PMs.ref(pm, nw), :critical_level) ? limit = _PMs.ref(pm, nw)[:critical_level] : limit = 0.0
-#    bus = zeros(Int, 0)
-#    for i in _PMs.ids(pm, :load)
-#        _PMs.ref(pm, nw, :load, i)["weight"] == 100 ? append!(bus, i) : nothing
-#    end
-#    constraint_critical_load(pm, nw, bus, limit)
-#end
+function constraint_critical_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int=_PMD.nw_id_default)
+    limit = pm.ref[:it][_PMD.pmd_it_sym][:critical_load_met]
+    conductors = _PMD.ref(pm,nw,:conductors)
+
+    total_pd = Vector{Float64}()
+    total_qd = Vector{Float64}()
+
+    for i in 1:conductors
+        push!(total_pd, 0.0)
+        push!(total_qd, 0.0)
+    end
+
+    loads = Set{Int64}()
+    for (i,load) in _PMD.ref(pm, nw, :load)
+        if (load["is_critical"] == true)
+            push!(loads,i)
+            total_pd = total_pd + load["pd_nom"]
+            total_qd = total_qd + load["qd_nom"]
+        end
+    end
+
+
+
+    constraint_critical_load(pm, nw, loads, limit, total_pd, total_qd)
+end
 
 #function constraint_non_critical_load(pm::_PMs.AbstractPowerModel, nw::Int)
 #    haskey(_PMs.ref(pm, nw), :demand_level) ? limit = _PMs.ref(pm, nw)[:demand_level] : limit = 1.0

@@ -336,7 +336,7 @@ function json2pm_load!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookup
         load_data[id]["qd"] = Array{Float64,1}(load["max_reactive_phase"])
 
         # critical
-        load["is_critical"] ? load_data[id]["weight"] = 100 : load_data[id]["weight"] = 1
+        load_data[id]["is_critical"] = load["is_critical"]
 
         load_data[id]["model"] = _PMD.POWER
         load_data[id]["connections"] = [i for i in 1:pm_data["conductors"] if load["has_phase"][i]]

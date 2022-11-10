@@ -101,13 +101,16 @@ end
 #    end
 #end
 
-#function constraint_critical_load(pm::_PMs.AbstractPowerModel, nw::Int, bus, limit)
-#    z_demand = _PMs.var(pm, nw)[:z_demand]
-#    pd = sum(sum(_PMs.ref(pm, nw, :load, i, "pd")) for i in bus)
-#    qd = sum(sum(_PMs.ref(pm, nw, :load, i, "qd")) for i in bus)
-#    JuMP.@constraint(pm.model, limit * pd <= sum(sum(z_demand[i] * sum(_PMs.ref(pm, nw, :load, i, "pd")) for i in bus)))
-#    JuMP.@constraint(pm.model, limit * qd <= sum(sum(z_demand[i] * sum(_PMs.ref(pm, nw, :load, i, "qd")) for i in bus)))
-#end
+function constraint_critical_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, loads::Set{Int64}, limit::Float64, total_pd::Vector{Float64}, total_qd::Vector{Float64})
+    pd = _PMD.var(pm, nw, :pd)
+    qd = _PMD.var(pm, nw, :qd)
+
+    all_phase_pd = sum(total_pd)
+    all_phase_qd = sum(total_qd)
+
+    JuMP.@constraint(pm.model, limit * all_phase_pd <= sum(sum(pd[i]) for i in loads))
+    JuMP.@constraint(pm.model, limit * all_phase_qd <= sum(sum(qd[i]) for i in loads))
+end
 
 #function constraint_non_critical_load(pm::_PMs.AbstractPowerModel, nw::Int, limit)
 #    z_demand = _PMs.var(pm, nw)[:z_demand]

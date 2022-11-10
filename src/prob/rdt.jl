@@ -16,7 +16,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         _PMD.variable_mc_transformer_power(pm; nw=n,);
         _PMD.variable_mc_switch_power(pm;nw=n)
         _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true);
-        #_PMD.variable_mc_gen_power_setpoint_on_off(pm; nw=n);
+        _PMD.variable_mc_generator_power_real_on_off(pm; nw=n);
         _PMD.variable_mc_load_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true);
 
@@ -46,8 +46,6 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             constraint_he(pm, i; nw=n) # constraint 1b for h variables
         end
 
-
-
 #        constraint_switch(pm; nw=n); # constraint 6a
 #        constraint_active_line(pm; nw=n); # constraint 6b
 
@@ -69,6 +67,10 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #            _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n)
         end
 
+        for i in _PMD.ids(pm, :gen_ne; nw=n)
+        #  some stuff
+        end
+
         for i in _PMD.ids(pm, :bus; nw=n)
 #            _PMD.constraint_mc_shed_power_balance(pm, i; nw=n)
         end
@@ -84,8 +86,12 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #            constraint_cycle_function(pm, i; nw=n)
         end
 
+        for i in _PMD.ids(pm, :branch_ne; nw=n)
+            ### some stuff
+        end
+
         for i in _PMD.ids(pm, :transformer; nw=n)
-#            _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
+            _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
         end
 
 #        for i in _PMs.ids(pm, :arcs_bal)
@@ -93,7 +99,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #            constraint_balance_flow(pm, i); # constraint 3a & 3b
 #        end
 
-        # constraint_critical_load(pm) # constraint 4c
+        constraint_critical_load(pm) # constraint 4c
         # constraint_non_critical_load(pm) # constraint
 
         # cycle elimination constraints
@@ -102,9 +108,13 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #        end
 
         for i in _PMD.ids(pm, :switch; nw=n)
-#            _PMD.constraint_mc_switch_state(pm, i; nw=n)
-#            _PMD.constraint_mc_switch_thermal_limit(pm, i; nw=n)
-#            _PMD.constraint_mc_switch_ampacity(pm, i; nw=n)
+            _PMD.constraint_mc_switch_state(pm, i; nw=n)
+            _PMD.constraint_mc_switch_thermal_limit(pm, i; nw=n)
+            _PMD.constraint_mc_switch_ampacity(pm, i; nw=n)
+        end
+
+        for i in _PMD.ids(pm, :switch_inline_ne; nw=n)
+            ### some stuff
         end
     end
 
