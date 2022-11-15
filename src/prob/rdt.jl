@@ -100,7 +100,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #        end
 
         constraint_critical_load(pm) # constraint 4c
-        # constraint_non_critical_load(pm) # constraint
+        constraint_total_load(pm) # anaologue to constraint 4c
 
         # cycle elimination constraints
 #        for tour in _PMs.ids(pm, :arc_tour)
@@ -118,7 +118,5 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
     end
 
-
     objective_rdt(pm)
-
 end
