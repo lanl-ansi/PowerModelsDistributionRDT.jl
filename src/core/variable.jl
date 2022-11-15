@@ -243,3 +243,85 @@ function variable_mc_switch_inline_ne_state(pm::_PMD.AbstractUnbalancedPowerMode
 
     report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :switch_inline_ne_state, _PMD.ids(pm, nw, :switch_inline_ne), state)
 end
+
+
+"branch_ne flow variables"
+function variable_mc_branch_ne_power(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    variable_mc_branch_ne_power_real(pm; nw=nw, bounded=bounded, report=report)
+    variable_mc_branch_ne_power_imaginary(pm; nw=nw, bounded=bounded, report=report)
+end
+
+"variable: `p[l,i,j]` for `(l,i,j)` in `arcs`"
+function variable_mc_branch_ne_power_real(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_branch_ne) for ((l,i,j), connections) in entry)
+    p = _PMD.var(pm, nw)[:p_ne] = Dict((l,i,j) => JuMP.@variable(pm.model,
+            [c in connections[(l,i,j)]], base_name="$(nw)_p_$((l,i,j))",
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, l), "p_start", c, 0.0)
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_branch_ne)
+    )
+
+    if bounded
+        for (l,i,j) in _PMD.ref(pm, nw, :arcs_branch_ne)
+            smax = _PMD._calc_branch_power_max(_PMD.ref(pm, nw, :branch_ne, l), _PMD.ref(pm, nw, :bus, i))
+            for (idx, c) in enumerate(connections[(l,i,j)])
+                JuMP.set_upper_bound(p[(l,i,j)][c],  smax[idx])
+                JuMP.set_lower_bound(p[(l,i,j)][c], -smax[idx])
+            end
+        end
+    end
+
+    for (l,branch) in _PMD.ref(pm, nw, :branch_ne)
+        if haskey(branch, "pf_start")
+            f_idx = (l, branch["f_bus"], branch["t_bus"])
+            for (idx,c) in enumerate(connections[f_idx])
+                JuMP.set_start_value(p[f_idx][c], branch["pf_start"][idx])
+            end
+        end
+        if haskey(branch, "pt_start")
+            t_idx = (l, branch["t_bus"], branch["f_bus"])
+            for (idx,c) in enumerate(connections[t_idx])
+                JuMP.set_start_value(p[t_idx][c], branch["pt_start"][idx])
+            end
+        end
+    end
+
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :pf, :pt, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), p)
+end
+
+
+"variable: `q[l,i,j]` for `(l,i,j)` in `arcs`"
+function variable_mc_branch_ne_power_imaginary(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_branch_ne) for ((l,i,j), connections) in entry)
+    q = _PMD.var(pm, nw)[:q_ne] = Dict((l,i,j) => JuMP.@variable(pm.model,
+            [c in connections[(l,i,j)]], base_name="$(nw)_q_$((l,i,j))",
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, l), "q_start", c, 0.0)
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_branch_ne)
+    )
+
+    if bounded
+        for (l,i,j) in _PMD.ref(pm, nw, :arcs_branch_ne)
+            smax = _PMD._calc_branch_power_max(_PMD.ref(pm, nw, :branch_ne, l), _PMD.ref(pm, nw, :bus, i))
+            for (idx, c) in enumerate(connections[(l,i,j)])
+                JuMP.set_upper_bound(q[(l,i,j)][c],  smax[idx])
+                JuMP.set_lower_bound(q[(l,i,j)][c], -smax[idx])
+            end
+        end
+    end
+
+    for (l,branch) in _PMD.ref(pm, nw, :branch_ne)
+        if haskey(branch, "qf_start")
+            f_idx = (l, branch["f_bus"], branch["t_bus"])
+            for (idx,c) in enumerate(connections[f_idx])
+                JuMP.set_start_value(q[f_idx][c], branch["qf_start"][idx])
+            end
+        end
+        if haskey(branch, "qt_start")
+            t_idx = (l, branch["t_bus"], branch["f_bus"])
+            for (idx,c) in enumerate(connections[t_idx])
+                JuMP.set_start_value(q[t_idx][c], branch["qt_start"][idx])
+            end
+        end
+    end
+
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :qf, :qt, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), q)
+end

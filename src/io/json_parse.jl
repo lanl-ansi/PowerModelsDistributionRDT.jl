@@ -373,7 +373,6 @@ function json2pm_scenarios!(data::Dict{String,Any}, pm_data::Dict{String,Any}, l
 end
 
 
-
 function json2pm_shunt!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups)
     shunt_data = Dict{String,Any}()
     pm_data["shunt"] = shunt_data

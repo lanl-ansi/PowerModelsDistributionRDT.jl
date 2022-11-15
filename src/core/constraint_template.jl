@@ -99,6 +99,39 @@ function constraint_total_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int=_P
 end
 
 
+""""
+    constraint_mc_power_balance_shed(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+Template function for KCL constraints for load shed problem. It is based on PowerModelsDistribution.constraint_mc_power_balance_shed and
+adds balance for inline switches, branch_ne, and switch_ne
+"""
+function constraint_mc_power_balance_shed(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    bus = _PMD.ref(pm, nw, :bus, i)
+    bus_arcs = _PMD.ref(pm, nw, :bus_arcs_conns_branch, i)
+    bus_arcs_ne = _PMD.ref(pm, nw, :bus_arcs_conns_branch_ne, i)
+    bus_arcs_sw = _PMD.ref(pm, nw, :bus_arcs_conns_switch, i)
+    bus_arcs_sw_ne = _PMD.ref(pm, nw, :bus_arcs_switch_inline_ne, i)
+    bus_arcs_trans = _PMD.ref(pm, nw, :bus_arcs_conns_transformer, i)
+    bus_arcs_trans_ne = _PMD.ref(pm, nw, :bus_arcs_conns_transformer_ne, i)
+    bus_gens = _PMD.ref(pm, nw, :bus_conns_gen, i)
+    bus_storage = _PMD.ref(pm, nw, :bus_conns_storage, i)
+    bus_loads = _PMD.ref(pm, nw, :bus_conns_load, i)
+    bus_shunts = _PMD.ref(pm, nw, :bus_conns_shunt, i)
+
+    if !haskey(_PMD.con(pm, nw), :lam_kcl_r)
+        _PMD.con(pm, nw)[:lam_kcl_r] = Dict{Int,Array{JuMP.ConstraintRef}}()
+    end
+
+    if !haskey(_PMD.con(pm, nw), :lam_kcl_i)
+        _PMD.con(pm, nw)[:lam_kcl_i] = Dict{Int,Array{JuMP.ConstraintRef}}()
+    end
+
+#    constraint_mc_power_balance_shed(pm, nw, i, bus["terminals"], bus["grounded"], bus_arcs, bus_arcs_sw, bus_arcs_trans, bus_gens, bus_storage, bus_loads, bus_shunts, bus_arcs_ne)
+    nothing
+end
+
+
+
+
 #function constraint_mc_vm_vuf(pm::_PMs.AbstractPowerModel, bus_id::Int; nw::Int=pm.cnw)
 #    bus = _PMs.ref(pm, nw, :bus_bal)[bus_id]
 #    vufmax = _PMs.ref(pm, nw, :bus)[bus]["vm_vuf_max"]

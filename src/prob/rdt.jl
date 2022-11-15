@@ -12,8 +12,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
     for n in _INs.nw_ids(pm, _PMD.pmd_it_sym)
         _PMD.variable_mc_bus_voltage_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_bus_voltage_on_off(pm; nw=n);  # is this necessary ?
-        _PMD.variable_mc_branch_power(pm; nw=n,);
-        _PMD.variable_mc_transformer_power(pm; nw=n,);
+        _PMD.variable_mc_branch_power(pm; nw=n);
+         variable_mc_branch_ne_power(pm; nw=n);
+        _PMD.variable_mc_transformer_power(pm; nw=n);
         _PMD.variable_mc_switch_power(pm;nw=n)
         _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_generator_power_real_on_off(pm; nw=n);
@@ -72,10 +73,10 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
 
         for i in _PMD.ids(pm, :bus; nw=n)
-#            _PMD.constraint_mc_shed_power_balance(pm, i; nw=n)
+            constraint_mc_power_balance_shed(pm, i; nw=n)
         end
 
-        for i in _PMD.ids(pm, :branch; nw=n)
+        for i in _PMD.ids(pm, :branch; nw=n) # need to break this out into damaged and un damaged branches
 #            constraint_mc_ohms_yt_from(pm, i; nw=n) # defines pij on z_e
 #            constraint_mc_ohms_yt_to(pm, i; nw=n) # defines pji on z_e
 
