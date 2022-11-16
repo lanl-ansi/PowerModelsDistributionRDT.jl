@@ -104,15 +104,16 @@ end
 Template function for KCL constraints for load shed problem. It is based on PowerModelsDistribution.constraint_mc_power_balance_shed and
 adds balance for inline switches, branch_ne, and switch_ne
 """
-function constraint_mc_power_balance_shed(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
     bus = _PMD.ref(pm, nw, :bus, i)
     bus_arcs = _PMD.ref(pm, nw, :bus_arcs_conns_branch, i)
     bus_arcs_ne = _PMD.ref(pm, nw, :bus_arcs_conns_branch_ne, i)
     bus_arcs_sw = _PMD.ref(pm, nw, :bus_arcs_conns_switch, i)
-    bus_arcs_sw_ne = _PMD.ref(pm, nw, :bus_arcs_switch_inline_ne, i)
+    bus_arcs_sw_ne = _PMD.ref(pm, nw, :bus_arcs_conns_switch_inline_ne, i)
     bus_arcs_trans = _PMD.ref(pm, nw, :bus_arcs_conns_transformer, i)
     bus_arcs_trans_ne = _PMD.ref(pm, nw, :bus_arcs_conns_transformer_ne, i)
     bus_gens = _PMD.ref(pm, nw, :bus_conns_gen, i)
+    bus_gens_ne = _PMD.ref(pm, nw, :bus_conns_gen_ne, i)
     bus_storage = _PMD.ref(pm, nw, :bus_conns_storage, i)
     bus_loads = _PMD.ref(pm, nw, :bus_conns_load, i)
     bus_shunts = _PMD.ref(pm, nw, :bus_conns_shunt, i)
@@ -125,7 +126,7 @@ function constraint_mc_power_balance_shed(pm::_PMD.AbstractUnbalancedPowerModel,
         _PMD.con(pm, nw)[:lam_kcl_i] = Dict{Int,Array{JuMP.ConstraintRef}}()
     end
 
-#    constraint_mc_power_balance_shed(pm, nw, i, bus["terminals"], bus["grounded"], bus_arcs, bus_arcs_sw, bus_arcs_trans, bus_gens, bus_storage, bus_loads, bus_shunts, bus_arcs_ne)
+    constraint_mc_power_balance_shed_ne(pm, nw, i, bus["terminals"], bus["grounded"], bus_arcs, bus_arcs_sw, bus_arcs_trans, bus_gens, bus_storage, bus_loads, bus_shunts, bus_arcs_ne, bus_arcs_sw_ne, bus_arcs_trans_ne, bus_gens_ne)
     nothing
 end
 

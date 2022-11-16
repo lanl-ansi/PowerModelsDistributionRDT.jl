@@ -31,5 +31,10 @@ module PowerModelsDistributionRDT
 
     include("prob/rdt.jl")
 
+    include("form/dcp.jl")
+    include("form/shared.jl")
+    include("form/acr.jl")
+    include("form/acp.jl")
+
     include("core/export.jl")  # must be last include to properly export functions
 end # module

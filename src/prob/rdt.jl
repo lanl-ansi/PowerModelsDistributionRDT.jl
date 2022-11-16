@@ -19,7 +19,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         _PMD.variable_mc_switch_power(pm;nw=n)
         variable_mc_switch_inline_ne_power(pm;nw=n)
         _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true);
-        _PMD.variable_mc_generator_power_real_on_off(pm; nw=n);
+        variable_mc_gen_ne_indicator(pm; nw=n, relax=true);
+        _PMD.variable_mc_generator_power_on_off(pm; nw=n);
+        variable_mc_generator_ne_power_on_off(pm; nw=n);
         _PMD.variable_mc_load_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true);
 
@@ -75,7 +77,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
 
         for i in _PMD.ids(pm, :bus; nw=n)
-            constraint_mc_power_balance_shed(pm, i; nw=n)
+            constraint_mc_power_balance_shed_ne(pm, i; nw=n)
         end
 
         for i in _PMD.ids(pm, :branch; nw=n) # need to break this out into damaged and un damaged branches

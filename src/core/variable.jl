@@ -370,7 +370,7 @@ function variable_mc_switch_inline_ne_power_real(pm::_PMD.AbstractUnbalancedPowe
         end
     end
 
-    _PMD.var(pm, nw)[:psw_inline_ne] = psw_auxes
+    _PMD.var(pm, nw)[:psw_ne] = psw_auxes
 
     report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), psw_expr)
 end
@@ -412,7 +412,7 @@ function variable_mc_switch_inline_ne_power_imaginary(pm::_PMD.AbstractUnbalance
         end
     end
 
-    _PMD.var(pm, nw)[:qsw_inline_ne] = qsw_auxes
+    _PMD.var(pm, nw)[:qsw_ne] = qsw_auxes
 
     report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), qsw_expr)
 end
@@ -506,4 +506,90 @@ function variable_mc_transformer_ne_power_imaginary(pm::_PMD.AbstractUnbalancedP
     end
 
     report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :transformer_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_transformer_ne_from), _PMD.ref(pm, nw, :arcs_transformer_ne_to), qt)
+end
+
+"Create variables for generator expansion status"
+function variable_mc_gen_ne_indicator(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, relax::Bool=false, report::Bool=true)
+    if !relax
+        z_gen_ne = _PMD.var(pm, nw)[:z_gen_ne] = JuMP.@variable(pm.model,
+            [i in _PMD.ids(pm, nw, :gen_ne)], base_name="$(nw)_z_gen_ne",
+            binary = true,
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), "z_gen_start", 1.0)
+        )
+    else
+        z_gen_ne = _PMD.var(pm, nw)[:z_gen_ne] = JuMP.@variable(pm.model,
+            [i in _PMD.ids(pm, nw, :gen_ne)], base_name="$(nw)_z_gen_ne",
+            lower_bound = 0,
+            upper_bound = 1,
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), "z_gen_start", 1.0)
+        )
+    end
+
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :gen_status, _PMD.ids(pm, nw, :gen_ne), z_gen_ne)
+end
+
+""
+function variable_mc_generator_ne_power_on_off(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    variable_mc_generator_ne_power_real_on_off(pm; nw=nw, bounded=bounded, report=report)
+    variable_mc_generator_ne_power_imaginary_on_off(pm; nw=nw, bounded=bounded, report=report)
+end
+
+
+""
+function variable_mc_generator_ne_power_real_on_off(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict(i => gen["connections"] for (i,gen) in _PMD.ref(pm, nw, :gen_ne))
+    pg = _PMD.var(pm, nw)[:pg_ne] = Dict(i => JuMP.@variable(pm.model,
+        [c in connections[i]], base_name="$(nw)_pg_ne_$(i)",
+        start = _PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), ["pg_start", "pg", "pmin"], c, 0.0)
+    ) for i in _PMD.ids(pm, nw, :gen_ne))
+
+    if bounded
+        for (i, gen) in _PMD.ref(pm, nw, :gen_ne)
+            if haskey(gen, "pmin")
+                for (idx, c) in enumerate(connections[i])
+                    JuMP.set_lower_bound(pg[i][c], min(gen["pmin"][idx], 0.0))
+                end
+            end
+
+            if haskey(gen, "pmax")
+                for (idx, c) in enumerate(connections[i])
+                    JuMP.set_upper_bound(pg[i][c], max(gen["pmax"][idx], 0.0))
+                end
+            end
+        end
+    end
+
+    _PMD.var(pm, nw)[:pg_bus_ne] = Dict{Int, Any}()
+
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :pg_ne, _PMD.ids(pm, nw, :gen_ne), pg)
+end
+
+
+""
+function variable_mc_generator_ne_power_imaginary_on_off(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict(i => gen["connections"] for (i,gen) in _PMD.ref(pm, nw, :gen_ne))
+    qg = _PMD.var(pm, nw)[:qg_ne] = Dict(i => JuMP.@variable(pm.model,
+        [c in connections[i]], base_name="$(nw)_qg_ne_$(i)",
+        start = _PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), ["qg_start", "qg", "qmin"], c, 0.0)
+    ) for i in _PMD.ids(pm, nw, :gen_ne))
+
+    if bounded
+        for (i, gen) in _PMD.ref(pm, nw, :gen_ne)
+            if haskey(gen, "qmin")
+                for (idx, c) in enumerate(connections[i])
+                    JuMP.set_lower_bound(qg[i][c], min(gen["qmin"][idx], 0.0))
+                end
+            end
+
+            if haskey(gen, "qmax")
+                for (idx, c) in enumerate(connections[i])
+                    JuMP.set_upper_bound(qg[i][c], max(gen["qmax"][idx], 0.0))
+                end
+            end
+        end
+    end
+
+    _PMD.var(pm, nw)[:qg_bus_ne] = Dict{Int, Any}()
+
+    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen, :qg_ne, _PMD.ids(pm, nw, :gen_ne), qg)
 end
