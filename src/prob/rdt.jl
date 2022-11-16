@@ -15,7 +15,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         _PMD.variable_mc_branch_power(pm; nw=n);
          variable_mc_branch_ne_power(pm; nw=n);
         _PMD.variable_mc_transformer_power(pm; nw=n);
+        variable_mc_transformer_ne_power(pm; nw=n)
         _PMD.variable_mc_switch_power(pm;nw=n)
+        variable_mc_switch_inline_ne_power(pm;nw=n)
         _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_generator_power_real_on_off(pm; nw=n);
         _PMD.variable_mc_load_indicator(pm; nw=n, relax=true);

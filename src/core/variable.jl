@@ -255,7 +255,7 @@ end
 function variable_mc_branch_ne_power_real(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
     connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_branch_ne) for ((l,i,j), connections) in entry)
     p = _PMD.var(pm, nw)[:p_ne] = Dict((l,i,j) => JuMP.@variable(pm.model,
-            [c in connections[(l,i,j)]], base_name="$(nw)_p_$((l,i,j))",
+            [c in connections[(l,i,j)]], base_name="$(nw)_p_ne_$((l,i,j))",
             start = _PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, l), "p_start", c, 0.0)
         ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_branch_ne)
     )
@@ -285,7 +285,7 @@ function variable_mc_branch_ne_power_real(pm::_PMD.AbstractUnbalancedPowerModel;
         end
     end
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :pf, :pt, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), p)
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), p)
 end
 
 
@@ -293,7 +293,7 @@ end
 function variable_mc_branch_ne_power_imaginary(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
     connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_branch_ne) for ((l,i,j), connections) in entry)
     q = _PMD.var(pm, nw)[:q_ne] = Dict((l,i,j) => JuMP.@variable(pm.model,
-            [c in connections[(l,i,j)]], base_name="$(nw)_q_$((l,i,j))",
+            [c in connections[(l,i,j)]], base_name="$(nw)_q_ne_$((l,i,j))",
             start = _PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, l), "q_start", c, 0.0)
         ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_branch_ne)
     )
@@ -323,5 +323,187 @@ function variable_mc_branch_ne_power_imaginary(pm::_PMD.AbstractUnbalancedPowerM
         end
     end
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :qf, :qt, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), q)
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), q)
+end
+
+
+
+function variable_mc_switch_inline_ne_power(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    variable_mc_switch_inline_ne_power_real(pm; nw=nw, bounded=bounded, report=report)
+    variable_mc_switch_inline_ne_power_imaginary(pm; nw=nw, bounded=bounded, report=report)
+end
+
+
+""
+function variable_mc_switch_inline_ne_power_real(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_switch_inline_ne) for ((l,i,j), connections) in entry)
+    psw = Dict((l,i,j) => JuMP.@variable(pm.model,
+            [c in connections[(l,i,j)]], base_name="$(nw)_psw__inline_ne_$((l,i,j))",
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :switch_inline_ne, l), "psw_start", c, 0.0)
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne)
+    )
+
+    if bounded
+        for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne)
+            smax = _PMD._calc_branch_power_max(_PMD.ref(pm, nw, :switch_inline_ne, l), _PMD.ref(pm, nw, :bus, i))
+            for (idx, c) in enumerate(connections[(l,i,j)])
+                JuMP.set_upper_bound(psw[(l,i,j)][c],  smax[idx])
+                JuMP.set_lower_bound(psw[(l,i,j)][c], -smax[idx])
+            end
+        end
+    end
+
+    # this explicit type erasure is necessary
+    psw_expr = Dict{Any,Any}( (l,i,j) => psw[(l,i,j)] for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne_from) )
+    psw_expr = merge(psw_expr, Dict( (l,j,i) => -1.0.*psw[(l,i,j)] for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne_from)))
+
+    # This is needed to get around error: "unexpected affine expression in nlconstraint"
+    psw_auxes = Dict{Any,Any}(
+        (l,i,j) => JuMP.@variable(
+            pm.model, [c in connections[(l,i,j)]],
+            base_name="$(nw)_psw_inline_ne_aux_$((l,i,j))"
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne)
+    )
+    for ((l,i,j), psw_aux) in psw_auxes
+        for (idx, c) in enumerate(connections[(l,i,j)])
+            JuMP.@constraint(pm.model, psw_expr[(l,i,j)][c] == psw_aux[c])
+        end
+    end
+
+    _PMD.var(pm, nw)[:psw_inline_ne] = psw_auxes
+
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), psw_expr)
+end
+
+
+""
+function variable_mc_switch_inline_ne_power_imaginary(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_switch_inline_ne) for ((l,i,j), connections) in entry)
+    qsw = Dict((l,i,j) => JuMP.@variable(pm.model,
+            [c in connections[(l,i,j)]], base_name="$(nw)_qsw_inline_ne_$((l,i,j))",
+            start = _PMD.comp_start_value(_PMD.ref(pm, nw, :switch_inline_ne, l), "qsw_start", c, 0.0)
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne)
+    )
+
+    if bounded
+        for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne)
+            smax = _PMD._calc_branch_power_max(_PMD.ref(pm, nw, :switch_inline_ne, l), _PMD.ref(pm, nw, :bus, i))
+            for (idx, c) in enumerate(connections[(l,i,j)])
+                JuMP.set_upper_bound(qsw[(l,i,j)][c],  smax[idx])
+                JuMP.set_lower_bound(qsw[(l,i,j)][c], -smax[idx])
+            end
+        end
+    end
+
+    # this explicit type erasure is necessary
+    qsw_expr = Dict{Any,Any}( (l,i,j) => qsw[(l,i,j)] for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne_from) )
+    qsw_expr = merge(qsw_expr, Dict( (l,j,i) => -1.0*qsw[(l,i,j)] for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne_from)))
+
+    # This is needed to get around error: "unexpected affine expression in nlconstraint"
+    qsw_auxes = Dict{Any,Any}(
+        (l,i,j) => JuMP.@variable(
+            pm.model, [c in connections[(l,i,j)]],
+            base_name="$(nw)_qsw_aux_inline_ne_$((l,i,j))"
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne)
+    )
+    for ((l,i,j), qsw_aux) in qsw_auxes
+        for (idx, c) in enumerate(connections[(l,i,j)])
+            JuMP.@constraint(pm.model, qsw_expr[(l,i,j)][c] == qsw_aux[c])
+        end
+    end
+
+    _PMD.var(pm, nw)[:qsw_inline_ne] = qsw_auxes
+
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), qsw_expr)
+end
+
+
+"Creates variables for both `active` and `reactive` power flow at each transformer."
+function variable_mc_transformer_ne_power(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    variable_mc_transformer_ne_power_real(pm; nw=nw, bounded=bounded, report=report)
+    variable_mc_transformer_ne_power_imaginary(pm; nw=nw, bounded=bounded, report=report)
+end
+
+
+"Create variables for the active power flowing into all transformer windings."
+function variable_mc_transformer_ne_power_real(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_transformer_ne) for ((l,i,j), connections) in entry)
+    pt = _PMD.var(pm, nw)[:pt_ne] = Dict((l,i,j) => JuMP.@variable(pm.model,
+            [c in connections[(l,i,j)]],
+            base_name="$(nw)_pt_ne_$((l,i,j))",
+            start = 0.0,
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_transformer_ne)
+    )
+
+    if bounded
+        for arc in _PMD.ref(pm, nw, :arcs_transformer_ne_from)
+            (l,i,j) = arc
+            rate_a_fr, rate_a_to = _PMD._calc_transformer_power_ub_frto(_PMD.ref(pm, nw, :transformer_ne, l), _PMD.ref(pm, nw, :bus, i), _PMD.ref(pm, nw, :bus, j))
+            for (idx, (fc, tc)) in enumerate(zip(connections[(l,i,j)], connections[(l,j,i)]))
+                JuMP.set_lower_bound(pt[(l,i,j)][fc], -rate_a_fr[idx])
+                JuMP.set_upper_bound(pt[(l,i,j)][fc],  rate_a_fr[idx])
+                JuMP.set_lower_bound(pt[(l,j,i)][tc], -rate_a_to[idx])
+                JuMP.set_upper_bound(pt[(l,j,i)][tc],  rate_a_to[idx])
+            end
+        end
+    end
+
+    for (l,transformer) in _PMD.ref(pm, nw, :transformer_ne)
+        if haskey(transformer, "pf_start")
+            f_idx = (l, transformer["f_bus"], transformer["t_bus"])
+            for (idx, c) in enumerate(connections[f_idx])
+                JuMP.set_start_value(pt[f_idx][c], transformer["pf_start"][idx])
+            end
+        end
+        if haskey(transformer, "pt_start")
+            t_idx = (l, transformer["t_bus"], transformer["f_bus"])
+            for (idx, c) in enumerate(connections[t_idx])
+                JuMP.set_start_value(pt[t_idx][c], transformer["pt_start"][idx])
+            end
+        end
+    end
+
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :transformer_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_transformer_ne_from), _PMD.ref(pm, nw, :arcs_transformer_ne_to), pt)
+end
+
+
+"Create variables for the reactive power flowing into all transformer windings."
+function variable_mc_transformer_ne_power_imaginary(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
+    connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_transformer_ne) for ((l,i,j), connections) in entry)
+    qt = _PMD.var(pm, nw)[:qt_ne] = Dict((l,i,j) => JuMP.@variable(pm.model,
+            [c in connections[(l,i,j)]], base_name="$(nw)_qt_ne_$((l,i,j))",
+            start = 0.0
+        ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_transformer_ne)
+    )
+
+    if bounded
+        for arc in _PMD.ref(pm, nw, :arcs_transformer_ne_from)
+            (l,i,j) = arc
+            rate_a_fr, rate_a_to = _PMD._calc_transformer_power_ub_frto(_PMD.ref(pm, nw, :transformer_ne, l), _PMD.ref(pm, nw, :bus, i), _PMD.ref(pm, nw, :bus, j))
+
+            for (idx, (fc,tc)) in enumerate(zip(connections[(l,i,j)], connections[(l,j,i)]))
+                JuMP.set_lower_bound(qt[(l,i,j)][fc], -rate_a_fr[idx])
+                JuMP.set_upper_bound(qt[(l,i,j)][fc],  rate_a_fr[idx])
+                JuMP.set_lower_bound(qt[(l,j,i)][tc], -rate_a_to[idx])
+                JuMP.set_upper_bound(qt[(l,j,i)][tc],  rate_a_to[idx])
+            end
+        end
+    end
+
+    for (l,transformer) in _PMD.ref(pm, nw, :transformer_ne)
+        if haskey(transformer, "qf_start")
+            f_idx = (l, transformer["f_bus"], transformer["t_bus"])
+            for (idx, fc) in enumerate(connections[f_idx])
+                JuMP.set_start_value(qt[f_idx][fc], transformer["qf_start"][idx])
+            end
+        end
+        if haskey(transformer, "qt_start")
+            t_idx = (l, transformer["t_bus"], transformer["f_bus"])
+            for (idx, tc) in enumerate(connections[t_idx])
+                JuMP.set_start_value(qt[t_idx][tc], transformer["qt_start"][idx])
+            end
+        end
+    end
+
+    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :transformer_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_transformer_ne_from), _PMD.ref(pm, nw, :arcs_transformer_ne_to), qt)
 end
