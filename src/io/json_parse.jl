@@ -57,7 +57,7 @@ function json_to_powermodels(data::Dict{String,Any})
     transform_branch2transformer!(pm_data, pm_data)
 
     haskey(data,"scenarios") ? json2pm_scenarios!(data, pm_data, lookups) : println("No scenarios found in file")
-    haskey(pm_data, "scenarios") ?  mn_data = _PMs.replicate(pm_data, length(keys(pm_data["scenarios"]))+1, global_keys=global_keys) : mn_data = pm_data
+    haskey(pm_data, "scenarios") ?  mn_data = _PM.replicate(pm_data, length(keys(pm_data["scenarios"]))+1, global_keys=global_keys) : mn_data = pm_data
 
     mn_data["nw"]["0"] = mn_data["nw"][string(length(keys(pm_data["scenarios"]))+1)]
     delete!(mn_data["nw"], string(length(keys(pm_data["scenarios"]))+1))
@@ -366,8 +366,9 @@ function json2pm_scenarios!(data::Dict{String,Any}, pm_data::Dict{String,Any}, l
         scenario_data[id] = Dict{String,Any}()
         scenario_data[id]["name"] = s["id"]
 
-        haskey(s, "disable_lines") ? scenario_data[id]["disabled_lines"] = [string(lookups[:branch_names][j]) for j in s["disable_lines"]] : nothing
-        haskey(s, "hardened_disabled_lines") ? scenario_data[id]["hardened_disabled_lines"] = [string(lookups[:branch_names][j]) for j in s["hardened_disabled_lines"]] : nothing
+        # In our parser, we internally index the branch data with a sequential number starting with 1 (a field called index) and hashed to the string representation of that number
+        haskey(s, "disable_lines") ? scenario_data[id]["disabled_lines"] = [string(lookups[:branch_names][j]) for j in s["disable_lines"]] : []
+        haskey(s, "hardened_disabled_lines") ? scenario_data[id]["hardened_disabled_lines"] = [string(lookups[:branch_names][j]) for j in s["hardened_disabled_lines"]] : []
     end
     pm_data["scenarios"] = scenario_data
 end
@@ -413,27 +414,27 @@ function scenarios2_mn!(data::Dict{String,Any}, lookups::Dict{Symbol,Any})
     for (s, scenario) in data["scenarios"]
         pm_data = data["nw"][s]
 
-        for i in scenario["hardened_disabled_lines"]
-            id = i
+        for id in scenario["hardened_disabled_lines"]
+            i = parse(Int64, id)
             if haskey(pm_data["branch"], id)
-              push!(pm_data["damaged_hardened_branch"], id)
+                push!(pm_data["damaged_hardened_branch"], i)
             elseif haskey(pm_data["transformer"], id)
-              push!(pm_data["damaged_hardened_transformer"], id)
+                push!(pm_data["damaged_hardened_transformer"], i)
             else
-              Memento.warn(_LOGGER, "I/O error: hardened disabled line identifier $(i) not found")
+                Memento.warn(_LOGGER, "I/O error: hardened disabled line identifier $(id) not found")
             end
         end
 
-        for i in scenario["disabled_lines"]
-            id = i
+        for id in scenario["disabled_lines"]
+            i = parse(Int64, id)
             if haskey(pm_data["branch"], id)
-              push!(pm_data["damaged_branch"], id)
-          elseif haskey(pm_data["branch_ne"], id)
-              push!(pm_data["damaged_branch_ne"], id)
+                push!(pm_data["damaged_branch"], i)
+            elseif haskey(pm_data["branch_ne"], id)
+                push!(pm_data["damaged_branch_ne"], i)
             elseif haskey(pm_data["transformer"], id)
-              push!(pm_data["damaged_transformer"], id)
+                push!(pm_data["damaged_transformer"], i)
             else
-              Memento.warn(_LOGGER, "I/O error: disabled line identifier $(i) not found")
+                Memento.warn(_LOGGER, "I/O error: disabled line identifier $(id) not found")
             end
         end
     end

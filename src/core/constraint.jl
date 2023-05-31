@@ -28,6 +28,45 @@ function constraint_he(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::
 end
 
 
+"""
+    constraint_mc_thermal_limit_from_damaged(pm::AbstractUnbalancedPowerModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+
+Generic thermal limit constraint for branches (from-side) that are damaged
+"""
+function constraint_mc_thermal_limit_from_damaged(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+    p_fr = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    he_s = _PMD.var(pm, nw, :he_s, f_idx[1])
+
+    _PMD.con(pm, nw, :mu_sm_branch)[f_idx] = mu_sm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= rate_a[idx]^2 * he_s) for idx in findall(rate_a .< Inf)]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, f_idx[1])[:mu_sm_fr] = mu_sm_fr
+    end
+    nothing
+end
+
+
+"""
+    constraint_mc_thermal_limit_to_damaged(pm::AbstractUnbalancedPowerModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+
+Generic thermal limit constraint for branches (to-side) that are damaged
+"""
+function constraint_mc_thermal_limit_to_damaged(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+    p_to = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    he_s = _PMD.var(pm, nw, :he_s, t_idx[1])
+
+    _PMD.con(pm, nw, :mu_sm_branch)[t_idx] = mu_sm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= rate_a[idx]^2 * he_s) for idx in findall(rate_a .< Inf)]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, t_idx[1])[:mu_sm_to] = mu_sm_to
+    end
+    nothing
+end
+
+
+
 
 #function constraint_branch_be_p(pm::_PMs.AbstractPowerModel, nw::Int, arcs, trans) # check trans arcs and branch arches
 #    be = _PMs.var(pm, nw, :be_p, (arcs))
@@ -73,7 +112,7 @@ end
 #    sum_p = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
 #    JuMP.@constraint(pm.model, sum(p[c] for c in _PMs.conductor_ids(pm)) == sum_p)
 #    p_be = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
-#    _INs.relaxation_product(pm.model, be, sum_p, p_be)
+#    _IM.relaxation_product(pm.model, be, sum_p, p_be)
 #    for cnd in _PMs.conductor_ids(pm)
 #        JuMP.@constraint(pm.model, ub_beta/3 * sum(p[c] for c in _PMs.conductor_ids(pm)) + 1/3*(lb_beta - ub_beta) * p_be >= p[cnd])
 #        JuMP.@constraint(pm.model, lb_beta/3 * sum(p[c] for c in _PMs.conductor_ids(pm)) + 1/3*(ub_beta - lb_beta) * p_be <= p[cnd])
@@ -94,7 +133,7 @@ end
 #    sum_q = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
 #    JuMP.@constraint(pm.model, sum(q[c] for c in _PMs.conductor_ids(pm)) == sum_q)
 #    q_be = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
-#    _INs.relaxation_product(pm.model, be, sum_q, q_be)
+#    _IM.relaxation_product(pm.model, be, sum_q, q_be)
 #    for cnd in _PMs.conductor_ids(pm)
 #        JuMP.@constraint(pm.model, ub_beta/3 * sum(q[c] for c in _PMs.conductor_ids(pm)) + 1/3*(lb_beta - ub_beta) * q_be >= q[cnd])
 #        JuMP.@constraint(pm.model, lb_beta/3 * sum(q[c] for c in _PMs.conductor_ids(pm)) + 1/3*(ub_beta - lb_beta) * q_be <= q[cnd])

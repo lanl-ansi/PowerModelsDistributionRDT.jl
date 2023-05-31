@@ -3,13 +3,13 @@ function solve_rdt(data::Dict{String,Any}, model_type, solver; kwargs...)
     return _PMD.solve_mc_model(data, model_type, solver, build_mc_rdt; multinetwork=true, ref_extensions=[ref_add_rdt!], eng2math_extensions=[transform_switch_inline_ne!,transform_switch_inline!], kwargs...)
 end
 
-function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
+function build_mc_rdt(pm::_PMD.AbstractUBFModels)
     variable_he(pm); # 1d h_e variables
     variable_te(pm; relax=true); # 1d t_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
     variable_xe(pm); # 1d x_e variables
     variable_ue(pm); # 1d u_e variables
 
-    for n in _INs.nw_ids(pm, _PMD.pmd_it_sym)
+    for n in _IM.nw_ids(pm, _PMD.pmd_it_sym)
         _PMD.variable_mc_bus_voltage_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_bus_voltage_on_off(pm; nw=n);  # is this necessary ?
         _PMD.variable_mc_branch_power(pm; nw=n);
@@ -56,7 +56,6 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 
         _PMD.constraint_mc_model_voltage(pm; nw=n);   # Some forms of the power flow equations have special constraints to link voltages together.  Most power flow models don't use this
 
-# need an accurate constraint for "switch_inline_ne" to interpret them correction
 
 #        for i in _PMs.ids(pm, :bus_bal)
 #            constraint_mc_vm_vuf(pm, i) # voltage imbalance constraint
@@ -72,36 +71,47 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #            _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n)
         end
 
+        for id in _PMD.ids(pm, :load)
+#            constraint_mc_load_power(pm, id)
+        end
+
         for i in _PMD.ids(pm, :gen_ne; nw=n)
         #  some stuff
         end
 
         for i in _PMD.ids(pm, :bus; nw=n)
-            constraint_mc_power_balance_shed_ne(pm, i; nw=n)
+            constraint_mc_power_balance_shed_ne(pm, i; nw=n) # constraint 2c
         end
 
-        for i in _PMD.ref(pm, :undamaged_branch; nw=n) # need to break this out into damaged and un damaged branches
-#            _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n) # defines pij on z_e
-#            _PMD.constraint_mc_ohms_yt_to(pm, i; nw=n) # defines pji on z_e
-
-            _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n)
-            _PMD.constraint_mc_ohms_yt_to(pm, i; nw=n)
+        for i in _PMD.ref(pm, :undamaged_branch; nw=n)
+            _PMD.constraint_mc_power_losses(pm, i; nw=n)
+            _PMD.constraint_mc_model_voltage_magnitude_difference(pm, i, nw=n)
 
             _PMD.constraint_mc_voltage_angle_difference(pm, i; nw=n) # not in paper, but fine to include
 
-            _PMD.constraint_mc_thermal_limit_from(pm, i; nw=n) # not in paper, but fine to include
-            _PMD.constraint_mc_thermal_limit_to(pm, i; nw=n) # not in paper, but fine to include
+            _PMD.constraint_mc_thermal_limit_from(pm, i; nw=n) # constraint 2d
+            _PMD.constraint_mc_thermal_limit_to(pm, i; nw=n) # constraint 2d
+
+    #        _PMD.constraint_mc_ampacity_from(pm, i) # not in paper, but fine to include
+    #        _PMD.constraint_mc_ampacity_to(pm, i) # not in paper, but fine to include
+
 #            constraint_cycle_function(pm, i; nw=n)
+            # constraint 2b is implict
         end
 
         for i in _PMD.ref(pm, :damaged_branch; nw=n) # need to break this out into damaged and un damaged branches
-#            print(i, " ")
+            constraint_mc_thermal_limit_from_damaged(pm, i; nw=n) # constraint 2d
+            constraint_mc_thermal_limit_to_damaged(pm, i; nw=n) # constraint 2d
+
+            # constraint 2b is implict
         end
 
+        # also need damaged_branch_ne - just not include for now???
         for i in _PMD.ids(pm, :branch_ne; nw=n)
             ### some stuff
         end
 
+        # this needs to be undamaged_transformer and transformer or maybe ingmore damaged transformers forn ow
         for i in _PMD.ids(pm, :transformer; nw=n)
             _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
         end
@@ -128,6 +138,15 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         for i in _PMD.ids(pm, :switch_inline_ne; nw=n)
             ### some stuff
         end
+
+
+#        for i in ids(pm, :storage)
+#               constraint_storage_state(pm, i)
+#               constraint_storage_complementarity_nl(pm, i)
+#               constraint_mc_storage_losses(pm, i)
+#               constraint_mc_storage_thermal_limit(pm, i)
+#           end
+
     end
 
     objective_rdt(pm)

@@ -8,7 +8,7 @@
 #end
 
 #function ref_add_vm_imbalance!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-#    if _INs.ismultinetwork(data)
+#    if _IM.ismultinetwork(data)
 #        nws_data = data["nw"]
 #    else
 #        nws_data = Dict("0" => data)
@@ -24,7 +24,7 @@
 #end
 
 #function ref_add_pq_imbalance!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-#    if _INs.ismultinetwork(data)
+#    if _IM.ismultinetwork(data)
 #        nws_data = data["nw"]
 #    else
 #        nws_data = Dict("0" => data)
@@ -282,7 +282,7 @@ end
 
 
 #function ref_add_subtour!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-#    if _INs.ismultinetwork(data)
+#    if _IM.ismultinetwork(data)
 #        nws_data = data["nw"]
 #    else
 #        nws_data = Dict("0" => data)

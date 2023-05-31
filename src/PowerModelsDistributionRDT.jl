@@ -7,9 +7,9 @@ module PowerModelsDistributionRDT
     import PowerModels
     import PowerModelsDistribution
 
-    const _PMs = PowerModels
+    const _PM  = PowerModels
     const _PMD = PowerModelsDistribution
-    const _INs = InfrastructureModels
+    const _IM  = InfrastructureModels
 
     function __init__()
         global _LOGGER = Memento.getlogger(PowerModels)

@@ -73,7 +73,7 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedWModels,
     _PMD.con(pm, nw, :lam_kcl_r)[i] = cstr_p
     _PMD.con(pm, nw, :lam_kcl_i)[i] = cstr_q
 
-    if _INs.report_duals(pm)
+    if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :bus, i)[:lam_kcl_r] = cstr_p
         _PMD.sol(pm, nw, :bus, i)[:lam_kcl_i] = cstr_q
     end

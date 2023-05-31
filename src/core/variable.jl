@@ -37,7 +37,7 @@ function variable_xe(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_d
                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
              )
      end
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe, _PMD.ids(pm, nw, :branch_ne), xe)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe, _PMD.ids(pm, nw, :branch_ne), xe)
 end
 
 function variable_ue(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
@@ -57,7 +57,7 @@ function variable_ue(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_d
                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), "ue_start", i, 0.0)
              )
      end
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :ue, _PMD.ids(pm, nw, :gen_ne), ue)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :ue, _PMD.ids(pm, nw, :gen_ne), ue)
 end
 
 function variable_he(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
@@ -78,7 +78,7 @@ function variable_he(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_d
              )
      end
 
-     report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :he, _PMD.ref(pm, nw, :branch_harden), he)
+     report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :he, _PMD.ref(pm, nw, :branch_harden), he)
 end
 
 function variable_te(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
@@ -99,7 +99,7 @@ function variable_te(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_d
              )
      end
 
-     report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :te, _PMD.ids(pm, nw, :switch_inline_ne), te)
+     report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :te, _PMD.ids(pm, nw, :switch_inline_ne), te)
 end
 
 function variable_xe_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
@@ -119,7 +119,7 @@ function variable_xe_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id
                      start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
             )
      end
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe_s, _PMD.ids(pm, nw, :branch_ne), xe_s)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe_s, _PMD.ids(pm, nw, :branch_ne), xe_s)
 end
 
 function variable_ze_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
@@ -152,8 +152,8 @@ function variable_ze_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id
                     start=_PMD.comp_start_value(_PMD.ref(pm, nw, :transformer, i), "ze_start", i, 0.0)
             )
      end
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :ze_s, _PMD.ids(pm, nw, :branch), ze_s)
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :transformer, :ze_s_xfr, _PMD.ids(pm, nw, :transformer), ze_s_xfr)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :ze_s, _PMD.ids(pm, nw, :branch), ze_s)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :transformer, :ze_s_xfr, _PMD.ids(pm, nw, :transformer), ze_s_xfr)
 end
 
 
@@ -174,7 +174,7 @@ function variable_he_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id
                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
              )
      end
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :he_s, _PMD.ref(pm, nw, :branch_harden), he_s)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :he_s, _PMD.ref(pm, nw, :branch_harden), he_s)
 end
 
 function variable_ue_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
@@ -194,7 +194,7 @@ function variable_ue_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id
                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :gen_ne, i), "ue_start", i, 0.0)
              )
      end
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :ue_s, _PMD.ids(pm, nw, :gen_ne), ue_s)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :ue_s, _PMD.ids(pm, nw, :gen_ne), ue_s)
 end
 
 
@@ -241,7 +241,7 @@ function variable_mc_switch_inline_ne_state(pm::_PMD.AbstractUnbalancedPowerMode
         )
     end
 
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :switch_inline_ne_state, _PMD.ids(pm, nw, :switch_inline_ne), state)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :switch_inline_ne_state, _PMD.ids(pm, nw, :switch_inline_ne), state)
 end
 
 
@@ -285,7 +285,7 @@ function variable_mc_branch_ne_power_real(pm::_PMD.AbstractUnbalancedPowerModel;
         end
     end
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), p)
+    report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), p)
 end
 
 
@@ -323,7 +323,7 @@ function variable_mc_branch_ne_power_imaginary(pm::_PMD.AbstractUnbalancedPowerM
         end
     end
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), q)
+    report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :branch_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_branch_ne_from), _PMD.ref(pm, nw, :arcs_branch_ne_to), q)
 end
 
 
@@ -372,7 +372,7 @@ function variable_mc_switch_inline_ne_power_real(pm::_PMD.AbstractUnbalancedPowe
 
     _PMD.var(pm, nw)[:psw_ne] = psw_auxes
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), psw_expr)
+    report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), psw_expr)
 end
 
 
@@ -414,7 +414,7 @@ function variable_mc_switch_inline_ne_power_imaginary(pm::_PMD.AbstractUnbalance
 
     _PMD.var(pm, nw)[:qsw_ne] = qsw_auxes
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), qsw_expr)
+    report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), qsw_expr)
 end
 
 
@@ -463,7 +463,7 @@ function variable_mc_transformer_ne_power_real(pm::_PMD.AbstractUnbalancedPowerM
         end
     end
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :transformer_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_transformer_ne_from), _PMD.ref(pm, nw, :arcs_transformer_ne_to), pt)
+    report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :transformer_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_transformer_ne_from), _PMD.ref(pm, nw, :arcs_transformer_ne_to), pt)
 end
 
 
@@ -505,7 +505,7 @@ function variable_mc_transformer_ne_power_imaginary(pm::_PMD.AbstractUnbalancedP
         end
     end
 
-    report && _INs.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :transformer_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_transformer_ne_from), _PMD.ref(pm, nw, :arcs_transformer_ne_to), qt)
+    report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :transformer_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_transformer_ne_from), _PMD.ref(pm, nw, :arcs_transformer_ne_to), qt)
 end
 
 "Create variables for generator expansion status"
@@ -525,7 +525,7 @@ function variable_mc_gen_ne_indicator(pm::_PMD.AbstractUnbalancedPowerModel; nw:
         )
     end
 
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :gen_status, _PMD.ids(pm, nw, :gen_ne), z_gen_ne)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :gen_status, _PMD.ids(pm, nw, :gen_ne), z_gen_ne)
 end
 
 ""
@@ -561,7 +561,7 @@ function variable_mc_generator_ne_power_real_on_off(pm::_PMD.AbstractUnbalancedP
 
     _PMD.var(pm, nw)[:pg_bus_ne] = Dict{Int, Any}()
 
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :pg_ne, _PMD.ids(pm, nw, :gen_ne), pg)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen_ne, :pg_ne, _PMD.ids(pm, nw, :gen_ne), pg)
 end
 
 
@@ -591,5 +591,5 @@ function variable_mc_generator_ne_power_imaginary_on_off(pm::_PMD.AbstractUnbala
 
     _PMD.var(pm, nw)[:qg_bus_ne] = Dict{Int, Any}()
 
-    report && _INs.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen, :qg_ne, _PMD.ids(pm, nw, :gen_ne), qg)
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :gen, :qg_ne, _PMD.ids(pm, nw, :gen_ne), qg)
 end

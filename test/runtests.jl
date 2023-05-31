@@ -3,10 +3,12 @@ using PowerModelsDistributionRDT
 const _RDT = PowerModelsDistributionRDT
 
 import InfrastructureModels
+const _IM = InfrastructureModels
+
 import Memento
 
 import PowerModels
-const _PMs = PowerModels
+const _PM = PowerModels
 
 import PowerModelsDistribution
 const _PMD = PowerModelsDistribution
@@ -15,7 +17,6 @@ const _PMD = PowerModelsDistribution
 Memento.setlevel!(Memento.getlogger(InfrastructureModels), "error")
 PowerModels.logger_config!("error")
 
-import Cbc
 import Ipopt
 import SCS
 import Juniper
@@ -35,7 +36,6 @@ using Test
 
 
 ipopt_solver = JuMP.optimizer_with_attributes(Ipopt.Optimizer,"print_level" => 0,"sb" => "yes","max_iter" => 1000,"acceptable_tol" => 1.0e-2)
-cbc_solver = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
 juniper_solver = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt_solver,"log_levels" => [],)
 
 #ipopt_solver = JuMP.with_optimizer(Ipopt.Optimizer, tol=1e-6, print_level=0)
@@ -45,6 +45,7 @@ juniper_solver = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" =
 
 
 @testset "microgrid" begin
+    include("data.jl")
     include("transform.jl")
     include("rdt.jl")
 end
