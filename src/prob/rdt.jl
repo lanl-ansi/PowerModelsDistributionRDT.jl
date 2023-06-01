@@ -108,6 +108,9 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
 
         # also need damaged_branch_ne - just not include for now???
         for i in _PMD.ids(pm, :branch_ne; nw=n)
+            constraint_mc_thermal_limit_from_ne(pm, i; nw=n) # constraint 2d
+            constraint_mc_thermal_limit_to_ne(pm, i; nw=n) # constraint 2d
+
             ### some stuff
         end
 

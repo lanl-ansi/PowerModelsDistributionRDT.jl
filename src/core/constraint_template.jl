@@ -169,6 +169,43 @@ function constraint_mc_thermal_limit_to_damaged(pm::_PMD.AbstractUnbalancedPower
 end
 
 
+"""
+    constraint_mc_thermal_limit_from_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for branch thermal constraints (from-side) for expansion lines
+"""
+function constraint_mc_thermal_limit_from_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch_ne, i)
+    f_idx = (i, branch["f_bus"], branch["t_bus"])
+
+    # using the same constraint store since a branch is either damaged or not damaged
+    if !haskey(_PMD.con(pm, nw), :mu_sm_branch_ne)
+        _PMD.con(pm, nw)[:mu_sm_branch_ne] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
+    end
+
+    constraint_mc_thermal_limit_from_ne(pm, nw, f_idx, branch["f_connections"], branch["rate_a"])
+    nothing
+end
+
+
+"""
+    constraint_mc_thermal_limit_to_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for branch thermal constraints (to-side) for expansion lines
+"""
+function constraint_mc_thermal_limit_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch_ne, i)
+    t_idx = (i, branch["t_bus"], branch["f_bus"])
+
+    # using the same constraint store since a branch is either damaged or not damaged
+    if !haskey(_PMD.con(pm, nw), :mu_sm_branch_ne)
+        _PMD.con(pm, nw)[:mu_sm_branch_ne] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
+    end
+
+    constraint_mc_thermal_limit_to_ne(pm, nw, t_idx, branch["t_connections"], branch["rate_a"])
+    nothing
+end
+
 
 
 #function constraint_mc_vm_vuf(pm::_PMs.AbstractPowerModel, bus_id::Int; nw::Int=pm.cnw)

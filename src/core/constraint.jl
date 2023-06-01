@@ -66,6 +66,44 @@ function constraint_mc_thermal_limit_to_damaged(pm::_PMD.AbstractUnbalancedPower
 end
 
 
+"""
+    constraint_mc_thermal_limit_from_ne(pm::AbstractUnbalancedPowerModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+
+Generic thermal limit constraint for branches (from-side) that are expansions
+"""
+function constraint_mc_thermal_limit_from_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+    p_fr = [_PMD.var(pm, nw, :p_ne, f_idx)[c] for c in f_connections]
+    q_fr = [_PMD.var(pm, nw, :q_ne, f_idx)[c] for c in f_connections]
+    xe_s = _PMD.var(pm, nw, :xe_s, f_idx[1])
+
+    _PMD.con(pm, nw, :mu_sm_branch_ne)[f_idx] = mu_sm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= rate_a[idx]^2 * xe_s) for idx in findall(rate_a .< Inf)]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, f_idx[1])[:mu_sm_fr_ne] = mu_sm_fr
+    end
+    nothing
+end
+
+
+"""
+    constraint_mc_thermal_limit_to_damaged(pm::AbstractUnbalancedPowerModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+
+Generic thermal limit constraint for branches (to-side) that are expansions
+"""
+function constraint_mc_thermal_limit_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, rate_a::Vector{<:Real})::Nothing
+    p_to = [_PMD.var(pm, nw, :p_ne, t_idx)[c] for c in t_connections]
+    q_to = [_PMD.var(pm, nw, :q_ne, t_idx)[c] for c in t_connections]
+    xe_s = _PMD.var(pm, nw, :xe_s, t_idx[1])
+
+    _PMD.con(pm, nw, :mu_sm_branch_ne)[t_idx] = mu_sm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= rate_a[idx]^2 * xe_s) for idx in findall(rate_a .< Inf)]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, t_idx[1])[:mu_sm_to_ne] = mu_sm_to
+    end
+    nothing
+end
+
+
 
 
 #function constraint_branch_be_p(pm::_PMs.AbstractPowerModel, nw::Int, arcs, trans) # check trans arcs and branch arches
