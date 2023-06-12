@@ -89,3 +89,113 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
         _PMD.sol(pm, nw, :bus, i)[:lam_kcl_i] = cstr_q
     end
 end
+
+
+
+
+@doc raw"""
+    constraint_mc_ampacity_from_damaged(pm::AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches from-side on branches that are damaged
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq (vr_{fr}^2 + vi_{fr}^2) i_{max}^2 * he_s
+```
+"""
+function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_fr = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    vr_fr = [_PMD.var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
+    vi_fr = [_PMD.var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
+    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * he_s) for idx in f_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
+    end
+
+    nothing
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_to_damaged(pm::AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches to-side that are damaged
+
+math```
+p_{to}^2 + q_{to}^2 \leq (vr_{to}^2 + vi_{to}^2) i_{max}^2 * he_s
+```
+"""
+function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    vr_to = [_PMD.var(pm, nw, :vr, t_idx[2])[c] for c in t_connections]
+    vi_to = [_PMD.var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
+    he_s  = _PMD.var(pm, nw, :he_s, t_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * he_s) for idx in t_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
+    end
+
+    nothing
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_from_ne(pm::AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches from-side on branches that are ne
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq (vr_{fr}^2 + vi_{fr}^2) i_{max}^2 * xe_s
+```
+"""
+function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_fr = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    vr_fr = [_PMD.var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
+    vi_fr = [_PMD.var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
+    xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * xe_s) for idx in f_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, f_idx[1])[:mu_cm_fr_ne] = mu_cm_fr
+    end
+
+    nothing
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_to_ne(pm::AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches to-side that are ne
+
+math```
+p_{to}^2 + q_{to}^2 \leq (vr_{to}^2 + vi_{to}^2) i_{max}^2 * he_s
+```
+"""
+function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    vr_to = [_PMD.var(pm, nw, :vr, t_idx[2])[c] for c in t_connections]
+    vi_to = [_PMD.var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
+    xe_s  = _PMD.var(pm, nw, :xe_s, t_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to
+    end
+
+    nothing
+end

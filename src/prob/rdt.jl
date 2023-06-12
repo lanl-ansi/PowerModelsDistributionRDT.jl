@@ -61,29 +61,29 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
 #            constraint_mc_vm_vuf(pm, i) # voltage imbalance constraint
 #        end
 
-        for i in _PMD.ids(pm, :ref_buses; nw=n)
+        for i in _PMD.ids(pm, n, :ref_buses)
             _PMD.constraint_mc_theta_ref(pm, i; nw=n) # slack bus constraint
         end
 
 #        _PMD.constraint_mc_bus_voltage_on_off(pm; nw=n) # allow voltages to go to zero if the bus is turned off.  Not in the paper but the analgoue of constraint (2e)
 
-        for i in _PMD.ids(pm, :gen; nw=n)
+        for i in _PMD.ids(pm, n, :gen)
 #            _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n)
         end
 
-        for id in _PMD.ids(pm, :load)
+        for id in _PMD.ids(pm, n, :load)
 #            constraint_mc_load_power(pm, id)
         end
 
-        for i in _PMD.ids(pm, :gen_ne; nw=n)
+        for i in _PMD.ids(pm, n, :gen_ne)
         #  some stuff
         end
 
-        for i in _PMD.ids(pm, :bus; nw=n)
+        for i in _PMD.ids(pm, n, :bus)
             constraint_mc_power_balance_shed_ne(pm, i; nw=n) # constraint 2c
         end
 
-        for i in _PMD.ref(pm, :undamaged_branch; nw=n)
+        for i in _PMD.ref(pm, n, :undamaged_branch)
             _PMD.constraint_mc_power_losses(pm, i; nw=n)
             _PMD.constraint_mc_model_voltage_magnitude_difference(pm, i, nw=n)
 
@@ -92,30 +92,32 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
             _PMD.constraint_mc_thermal_limit_from(pm, i; nw=n) # constraint 2d
             _PMD.constraint_mc_thermal_limit_to(pm, i; nw=n) # constraint 2d
 
-    #        _PMD.constraint_mc_ampacity_from(pm, i) # not in paper, but fine to include
-    #        _PMD.constraint_mc_ampacity_to(pm, i) # not in paper, but fine to include
+            _PMD.constraint_mc_ampacity_from(pm, i; nw=n) # not in paper, but fine to include
+            _PMD.constraint_mc_ampacity_to(pm, i; nw=n) # not in paper, but fine to include
 
 #            constraint_cycle_function(pm, i; nw=n)
             # constraint 2b is implict
         end
 
-        for i in _PMD.ref(pm, :damaged_branch; nw=n) # need to break this out into damaged and un damaged branches
+        for i in _PMD.ref(pm, n, :damaged_branch) # need to break this out into damaged and un damaged branches
             constraint_mc_thermal_limit_from_damaged(pm, i; nw=n) # constraint 2d
             constraint_mc_thermal_limit_to_damaged(pm, i; nw=n) # constraint 2d
+
+            constraint_mc_ampacity_from_damaged(pm, i; nw=n) # not in paper, but fine to include
+            constraint_mc_ampacity_to_damaged(pm, i; nw=n) # not in paper, but fine to include
+
 
             # constraint 2b is implict
         end
 
-        # also need damaged_branch_ne - just not include for now???
-        for i in _PMD.ids(pm, :branch_ne; nw=n)
+        for i in _PMD.ids(pm, n, :branch_ne)
             constraint_mc_thermal_limit_from_ne(pm, i; nw=n) # constraint 2d
             constraint_mc_thermal_limit_to_ne(pm, i; nw=n) # constraint 2d
 
             ### some stuff
         end
 
-        # this needs to be undamaged_transformer and transformer or maybe ingmore damaged transformers forn ow
-        for i in _PMD.ids(pm, :transformer; nw=n)
+        for i in _PMD.ids(pm, n, :transformer)
             _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
         end
 
@@ -124,30 +126,30 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
 #            constraint_balance_flow(pm, i); # constraint 3a & 3b
 #        end
 
-        constraint_critical_load(pm) # constraint 4c
-        constraint_total_load(pm) # anaologue to constraint 4c
+        constraint_critical_load(pm; nw=n) # constraint 4c
+        constraint_total_load(pm; nw=n) # anaologue to constraint 4c
 
         # cycle elimination constraints
 #        for tour in _PMs.ids(pm, :arc_tour)
 #            constraint_cycle_elimination(pm, n, tour)
 #        end
 
-        for i in _PMD.ids(pm, :switch; nw=n)
+        for i in _PMD.ids(pm, n, :switch)
             _PMD.constraint_mc_switch_state(pm, i; nw=n)
             _PMD.constraint_mc_switch_thermal_limit(pm, i; nw=n)
             _PMD.constraint_mc_switch_ampacity(pm, i; nw=n)
         end
 
-        for i in _PMD.ids(pm, :switch_inline_ne; nw=n)
+        for i in _PMD.ids(pm, n, :switch_inline_ne)
             ### some stuff
         end
 
 
-#        for i in ids(pm, :storage)
-#               constraint_storage_state(pm, i)
-#               constraint_storage_complementarity_nl(pm, i)
-#               constraint_mc_storage_losses(pm, i)
-#               constraint_mc_storage_thermal_limit(pm, i)
+#        for i in ids(pm, n, :storage)
+#               _PMD.constraint_storage_state(pm, i; nw=n)
+#               _PMD.constraint_storage_complementarity_nl(pm, i; nw=n)
+#               _PMD.constraint_mc_storage_losses(pm, i; nw=n)
+#               _PMD.constraint_mc_storage_thermal_limit(pm, i; nw=n)
 #           end
 
     end

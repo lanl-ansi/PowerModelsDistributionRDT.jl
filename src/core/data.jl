@@ -28,17 +28,63 @@ function gen_scenarios(filePath::String, data::Dict{String,Any})
     end
     return scenData;
 end
-# ["model", "name", "status", "active_phases", "qd", "vnom_kv", "source_id", "load_bus", "index", "conn", "pd"]
+
 
 function correct_network_data!(data::Dict{String,Any})
-    _PM.check_connectivity(data)
+    _PMD.check_connectivity(data)
     _PM.correct_transformer_parameters!(data)
     _PM.correct_voltage_angle_differences!(data)
     _PM.correct_thermal_limits!(data)
-    _PM.correct_branch_directions!(data)
-    _PM.check_branch_loops(data)
-    _PM.correct_bus_types!(data)
+    _PMD.correct_branch_directions!(data)
+    _PMD.check_branch_loops(data)
+    _PMD.correct_bus_types!(data)
     _PM.correct_dcline_limits!(data)
-    _PM.correct_cost_functions!(data)
-    _PM.standardize_cost_terms!(data)
+    _PMD.correct_cost_functions!(data)
+    _PMD.standardize_cost_terms!(data)
+end
+
+
+function calc_total_real_load(loads::Dict)
+    pd = zeros(Float64,length(first(loads)[2]["pd"]))
+
+    for (i, load) in loads
+        pd = pd + load["pd"]
+    end
+
+    return pd
+end
+
+
+function calc_total_reactive_load(loads::Dict)
+    qd = zeros(Float64,length(first(loads)[2]["qd"]))
+
+    for (i, load) in loads
+        qd = qd + load["qd"]
+    end
+
+    return qd
+end
+
+
+function calc_branch_current_max(branch::Dict{String,<:Any}, bus::Dict{String,<:Any}, total_real_load::Vector{Float64}, total_reactive_load::Vector{Float64})::Vector{Float64}
+    connections = [findfirst(isequal(c), bus["terminals"]) for c in (branch["f_bus"] == bus["index"] ? branch["f_connections"] : branch["t_connections"])]
+    max_current = sqrt.(total_real_load.^2 + total_reactive_load.^2)./bus["vmin"][connections]
+
+    if haskey(branch, "c_rating_a")
+        return min.(branch["c_rating_a"],max_current)
+    else
+        return max_current
+    end
+end
+
+
+function calc_branch_power_max(branch::Dict{String,<:Any}, bus::Dict{String,<:Any}, total_real_load::Vector{Float64}, total_reactive_load::Vector{Float64})::Vector{Float64}
+    connections = [findfirst(isequal(c), bus["terminals"]) for c in (branch["f_bus"] == bus["index"] ? branch["f_connections"] : branch["t_connections"])]
+    max_power = sqrt.(total_real_load.^2 + total_reactive_load.^2)
+
+    if haskey(branch, "rating_a")
+        return min.(branch["rating_a"],max_power)
+    else
+        return max_power
+    end
 end

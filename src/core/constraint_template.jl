@@ -53,7 +53,7 @@ end
 #end
 
 
-function constraint_critical_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int=_PMD.nw_id_default)
+function constraint_critical_load(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default)
     limit = pm.ref[:it][_PMD.pmd_it_sym][:critical_load_met]
     conductors = _PMD.ref(pm,nw,:conductors)
 
@@ -77,7 +77,7 @@ function constraint_critical_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int
 end
 
 
-function constraint_total_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int=_PMD.nw_id_default)
+function constraint_total_load(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default)
     limit = pm.ref[:it][_PMD.pmd_it_sym][:total_load_met]
     conductors = _PMD.ref(pm,nw,:conductors)
 
@@ -139,13 +139,15 @@ Template function for branch thermal constraints (from-side) for damaged lines
 function constraint_mc_thermal_limit_from_damaged(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
     branch = _PMD.ref(pm, nw, :branch, i)
     f_idx = (i, branch["f_bus"], branch["t_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["f_bus"])
 
     # using the same constraint store since a branch is either damaged or not damaged
     if !haskey(_PMD.con(pm, nw), :mu_sm_branch)
         _PMD.con(pm, nw)[:mu_sm_branch] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
     end
 
-    constraint_mc_thermal_limit_from_damaged(pm, nw, f_idx, branch["f_connections"], branch["rate_a"])
+    rating = calc_branch_power_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_thermal_limit_from_damaged(pm, nw, f_idx, branch["f_connections"], rating)
     nothing
 end
 
@@ -158,13 +160,15 @@ Template function for branch thermal constraints (to-side) for damaged lines
 function constraint_mc_thermal_limit_to_damaged(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
     branch = _PMD.ref(pm, nw, :branch, i)
     t_idx = (i, branch["t_bus"], branch["f_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["t_bus"])
 
     # using the same constraint store since a branch is either damaged or not damaged
     if !haskey(_PMD.con(pm, nw), :mu_sm_branch)
         _PMD.con(pm, nw)[:mu_sm_branch] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
     end
 
-    constraint_mc_thermal_limit_to_damaged(pm, nw, t_idx, branch["t_connections"], branch["rate_a"])
+    rating = calc_branch_power_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_thermal_limit_to_damaged(pm, nw, t_idx, branch["t_connections"], rating)
     nothing
 end
 
@@ -177,13 +181,15 @@ Template function for branch thermal constraints (from-side) for expansion lines
 function constraint_mc_thermal_limit_from_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
     branch = _PMD.ref(pm, nw, :branch_ne, i)
     f_idx = (i, branch["f_bus"], branch["t_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["f_bus"])
 
     # using the same constraint store since a branch is either damaged or not damaged
     if !haskey(_PMD.con(pm, nw), :mu_sm_branch_ne)
         _PMD.con(pm, nw)[:mu_sm_branch_ne] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
     end
 
-    constraint_mc_thermal_limit_from_ne(pm, nw, f_idx, branch["f_connections"], branch["rate_a"])
+    rating = calc_branch_power_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_thermal_limit_from_ne(pm, nw, f_idx, branch["f_connections"], rating)
     nothing
 end
 
@@ -196,13 +202,96 @@ Template function for branch thermal constraints (to-side) for expansion lines
 function constraint_mc_thermal_limit_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
     branch = _PMD.ref(pm, nw, :branch_ne, i)
     t_idx = (i, branch["t_bus"], branch["f_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["t_bus"])
 
     # using the same constraint store since a branch is either damaged or not damaged
     if !haskey(_PMD.con(pm, nw), :mu_sm_branch_ne)
         _PMD.con(pm, nw)[:mu_sm_branch_ne] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
     end
 
-    constraint_mc_thermal_limit_to_ne(pm, nw, t_idx, branch["t_connections"], branch["rate_a"])
+    rating = calc_branch_power_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_thermal_limit_to_ne(pm, nw, t_idx, branch["t_connections"], rating)
+    nothing
+end
+
+
+"""
+    constraint_mc_ampacity_from_damaged(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for branch current limit constraint from-side for branches that are damaged
+"""
+function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch, i)
+    f_idx = (i, branch["f_bus"], branch["t_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["f_bus"])
+
+    if !haskey(_PMD.con(pm, nw), :mu_cm_branch)
+        _PMD.con(pm, nw)[:mu_cm_branch] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
+    end
+
+    c_rating = calc_branch_current_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_ampacity_from_damaged(pm, nw, f_idx, branch["f_connections"], c_rating)
+    nothing
+end
+
+
+"""
+    constraint_mc_ampacity_to_damaged(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for branch current limit constraint to-side for branches that are damaged
+"""
+function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch, i)
+    t_idx = (i, branch["t_bus"], branch["f_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["t_bus"])
+
+    if !haskey(_PMD.con(pm, nw), :mu_cm_branch)
+        _PMD.con(pm, nw)[:mu_cm_branch] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
+    end
+
+    c_rating = calc_branch_current_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_ampacity_to_damaged(pm, nw, t_idx, branch["t_connections"], c_rating)
+    nothing
+end
+
+
+
+"""
+    constraint_mc_ampacity_from_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for branch current limit constraint from-side for branches that are expansion
+"""
+function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch_ne, i)
+    f_idx = (i, branch["f_bus"], branch["t_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["f_bus"])
+
+    if !haskey(_PMD.con(pm, nw), :mu_cm_branch_ne)
+        _PMD.con(pm, nw)[:mu_cm_branch_ne] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
+    end
+
+    c_rating = calc_branch_current_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_ampacity_from_ne(pm, nw, f_idx, branch["f_connections"], c_rating)
+    nothing
+end
+
+
+"""
+    constraint_mc_ampacity_to_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for branch current limit constraint to-side for branches that are expansion
+"""
+function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch_ne, i)
+    t_idx = (i, branch["t_bus"], branch["f_bus"])
+    bus = _PMD.ref(pm,nw,:bus,branch["t_bus"])
+
+    if !haskey(_PMD.con(pm, nw), :mu_cm_branch_ne)
+        _PMD.con(pm, nw)[:mu_cm_branch] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
+    end
+
+    c_rating = calc_branch_current_max(branch, bus, _PMD.ref(pm, nw, :total_real_load), _PMD.ref(pm, nw, :total_reactive_load))
+    constraint_mc_ampacity_to_ne(pm, nw, t_idx, branch["t_connections"], c_rating)
     nothing
 end
 

@@ -1,4 +1,79 @@
 
+function variable_he_s(pm::_PMD.AbstractUnbalancedWModels; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
+    if relax
+        he_s = _PMD.var(pm, nw)[:he_s] = JuMP.@variable(pm.model,
+                [i in _PMD.ref(pm, nw, :branch_harden)],
+                base_name="$(nw)_he_s",
+                lower_bound = 0,
+                upper_bound = 1,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
+             )
+    else
+        he_s = _PMD.var(pm, nw)[:he_s] = JuMP.@variable(pm.model,
+                [i in _PMD.ref(pm, nw, :branch_harden)],
+                base_name="$(nw)_he_s",
+                binary = true,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
+             )
+     end
+
+     terminals = Dict(i => bus["terminals"] for (i,bus) in _PMD.ref(pm, nw, :bus))
+     branch = _PMD.ref(pm, nw, :branch)
+
+     he_s_w_fr = _PMD.var(pm, nw)[:he_s_w_fr] = Dict(i => JuMP.@variable(pm.model,
+                 [t in terminals[branch[i]["f_bus"]]], base_name="$(nw)_he_s_w_fr_$(i)",
+                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
+             ) for i in _PMD.ref(pm, nw, :branch_harden)
+         )
+
+    he_s_w_to = _PMD.var(pm, nw)[:he_s_w_to] = Dict(i => JuMP.@variable(pm.model,
+                [t in terminals[branch[i]["t_bus"]]], base_name="$(nw)_he_s_w_to_$(i)",
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
+            ) for i in _PMD.ref(pm, nw, :branch_harden)
+         )
+
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :he_s, _PMD.ref(pm, nw, :branch_harden), he_s)
+end
+
+
+function variable_xe_s(pm::_PMD.AbstractUnbalancedWModels; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
+    if relax
+        xe_s = _PMD.var(pm, nw)[:xe_s] = JuMP.@variable(pm.model,
+                [i in _PMD.ids(pm, nw, :branch_ne)],
+                base_name="$(nw)_xe_s_ne",
+                lower_bound = 0,
+                upper_bound = 1,
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
+              )
+    else
+        xe_s = _PMD.var(pm, nw)[:xe_s] = JuMP.@variable(pm.model,
+                     [i in _PMD.ids(pm, nw, :branch_ne)],
+                     base_name="$(nw)_xe_s_ne",
+                     binary = true,
+                     start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
+            )
+    end
+
+     terminals = Dict(i => bus["terminals"] for (i,bus) in _PMD.ref(pm, nw, :bus))
+     branch = _PMD.ref(pm, nw, :branch_ne)
+
+     xe_s_w_fr = _PMD.var(pm, nw)[:xe_s_w_fr] = Dict(i => JuMP.@variable(pm.model,
+                 [t in terminals[branch[i]["f_bus"]]], base_name="$(nw)_xe_s_w_fr_$(i)",
+                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
+             ) for i in _PMD.ids(pm, nw, :branch_ne)
+         )
+
+     xe_s_w_to = _PMD.var(pm, nw)[:xe_s_w_to] = Dict(i => JuMP.@variable(pm.model,
+                [t in terminals[branch[i]["t_bus"]]], base_name="$(nw)_xe_s_w_to_$(i)",
+                start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch_ne, i), "xe_start", i, 0.0)
+            ) for i in _PMD.ids(pm, nw, :branch_ne)
+         )
+
+
+    report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch_ne, :xe_s, _PMD.ids(pm, nw, :branch_ne), xe_s)
+end
+
+
 "KCL for load shed problem with transformers (AbstractWForms)"
 function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedWModels, nw::Int, i::Int, terminals::Vector{Int}, grounded::Vector{Bool},
                                           bus_arcs::Vector{Tuple{Tuple{Int,Int,Int},Vector{Int}}}, bus_arcs_sw::Vector{Tuple{Tuple{Int,Int,Int},Vector{Int}}},
@@ -77,4 +152,130 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedWModels,
         _PMD.sol(pm, nw, :bus, i)[:lam_kcl_r] = cstr_p
         _PMD.sol(pm, nw, :bus, i)[:lam_kcl_i] = cstr_q
     end
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_from_damaged(pm::AbstractUnbalancedWModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches from-side that are damaged
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq w_{fr} i_{max}^2 * he_s
+```
+"""
+function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedWModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_fr       = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr       = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    w_fr       = [_PMD.var(pm, nw, :w, f_idx[2])[c] for c in f_connections]
+    he_s       = _PMD.var(pm, nw, :he_s, f_idx[1])
+    he_s_w_fr  = [_PMD.var(pm, nw, :he_s_w_fr, f_idx[1])[c] for c in f_connections]
+
+    for c in f_connections
+       _IM.relaxation_product(pm.model, he_s, w_fr[c], he_s_w_fr[c])
+    end
+
+#    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= w_fr[idx] * c_rating[idx]^2 * he_s) for idx in findall(c_rating .< Inf)]
+    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= he_s_w_fr[idx] * c_rating[idx]^2) for idx in f_connections]
+
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
+    end
+
+    nothing
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_to(pm::AbstractUnbalancedWModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches to-side that are damaged
+
+math```
+p_{to}^2 + q_{to}^2 \leq w_{to} i_{max}^2
+```
+"""
+function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedWModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to       = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to       = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    w_to       = [_PMD.var(pm, nw, :w, t_idx[2])[c] for c in t_connections]
+    he_s       = _PMD.var(pm, nw, :he_s, t_idx[1])
+    he_s_w_to  = [_PMD.var(pm, nw, :he_s_w_to, t_idx[1])[c] for c in t_connections]
+
+    for c in t_connections
+       _IM.relaxation_product(pm.model, he_s, w_to[c], he_s_w_to[c])
+    end
+
+#    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= w_to[idx] * c_rating[idx]^2 * he_s) for idx in findall(c_rating .< Inf)]
+    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= he_s_w_to[idx] * c_rating[idx]^2) for idx in t_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
+    end
+
+    nothing
+end
+
+
+
+@doc raw"""
+    constraint_mc_ampacity_from_ne(pm::AbstractUnbalancedWModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches from-side that are ne
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq w_{fr} i_{max}^2 * xe_s
+```
+"""
+function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedWModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_fr       = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr       = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    w_fr       = [_PMD.var(pm, nw, :w, f_idx[2])[c] for c in f_connections]
+    xe_s       = _PMD.var(pm, nw, :xe_s, f_idx[1])
+    xe_s_w_fr  = [_PMD.var(pm, nw, :xe_s_w_fr, f_idx[1])[c] for c in f_connections]
+
+    for c in f_connections
+       _IM.relaxation_product(pm.model, xe_s, w_fr[c], xe_s_w_fr[c])
+    end
+
+#    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= w_fr[idx] * c_rating[idx]^2 * he_s) for idx in findall(c_rating .< Inf)]
+    _PMD.con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= xe_s_w_fr[idx] * c_rating[idx]^2) for idx in f_connections]
+
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, f_idx[1])[:mu_cm_fr_ne] = mu_cm_fr
+    end
+
+    nothing
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_to_ne(pm::AbstractUnbalancedWModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches to-side that are ned
+math```
+p_{to}^2 + q_{to}^2 \leq w_{to} i_{max}^2 # xe_s
+```
+"""
+function constraint_mc_ampacity_to_xe(pm::_PMD.AbstractUnbalancedWModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to       = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to       = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    w_to       = [_PMD.var(pm, nw, :w, t_idx[2])[c] for c in t_connections]
+    xe_s       = _PMD.var(pm, nw, :xe_s, t_idx[1])
+    xe_s_w_to  = [_PMD.var(pm, nw, :xe_s_w_to, t_idx[1])[c] for c in t_connections]
+
+    for c in t_connections
+       _IM.relaxation_product(pm.model, xe_s, w_to[c], xe_s_w_to[c])
+    end
+
+#    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= w_to[idx] * c_rating[idx]^2 * he_s) for idx in findall(c_rating .< Inf)]
+    _PMD.con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= xe_s_w_to[idx] * c_rating[idx]^2) for idx in t_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to
+    end
+
+    nothing
 end

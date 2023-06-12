@@ -38,7 +38,7 @@ function constraint_mc_thermal_limit_from_damaged(pm::_PMD.AbstractUnbalancedPow
     q_fr = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
     he_s = _PMD.var(pm, nw, :he_s, f_idx[1])
 
-    _PMD.con(pm, nw, :mu_sm_branch)[f_idx] = mu_sm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= rate_a[idx]^2 * he_s) for idx in findall(rate_a .< Inf)]
+    _PMD.con(pm, nw, :mu_sm_branch)[f_idx] = mu_sm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= rate_a[idx]^2 * he_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch, f_idx[1])[:mu_sm_fr] = mu_sm_fr
@@ -57,7 +57,7 @@ function constraint_mc_thermal_limit_to_damaged(pm::_PMD.AbstractUnbalancedPower
     q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
     he_s = _PMD.var(pm, nw, :he_s, t_idx[1])
 
-    _PMD.con(pm, nw, :mu_sm_branch)[t_idx] = mu_sm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= rate_a[idx]^2 * he_s) for idx in findall(rate_a .< Inf)]
+    _PMD.con(pm, nw, :mu_sm_branch)[t_idx] = mu_sm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= rate_a[idx]^2 * he_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch, t_idx[1])[:mu_sm_to] = mu_sm_to
@@ -76,7 +76,7 @@ function constraint_mc_thermal_limit_from_ne(pm::_PMD.AbstractUnbalancedPowerMod
     q_fr = [_PMD.var(pm, nw, :q_ne, f_idx)[c] for c in f_connections]
     xe_s = _PMD.var(pm, nw, :xe_s, f_idx[1])
 
-    _PMD.con(pm, nw, :mu_sm_branch_ne)[f_idx] = mu_sm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= rate_a[idx]^2 * xe_s) for idx in findall(rate_a .< Inf)]
+    _PMD.con(pm, nw, :mu_sm_branch_ne)[f_idx] = mu_sm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= rate_a[idx]^2 * xe_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch_ne, f_idx[1])[:mu_sm_fr_ne] = mu_sm_fr
@@ -95,7 +95,7 @@ function constraint_mc_thermal_limit_to_ne(pm::_PMD.AbstractUnbalancedPowerModel
     q_to = [_PMD.var(pm, nw, :q_ne, t_idx)[c] for c in t_connections]
     xe_s = _PMD.var(pm, nw, :xe_s, t_idx[1])
 
-    _PMD.con(pm, nw, :mu_sm_branch_ne)[t_idx] = mu_sm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= rate_a[idx]^2 * xe_s) for idx in findall(rate_a .< Inf)]
+    _PMD.con(pm, nw, :mu_sm_branch_ne)[t_idx] = mu_sm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= rate_a[idx]^2 * xe_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch_ne, t_idx[1])[:mu_sm_to_ne] = mu_sm_to

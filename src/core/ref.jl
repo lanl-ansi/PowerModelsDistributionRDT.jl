@@ -178,6 +178,13 @@ function ref_add_undamaged_branch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:
 end
 
 
+function ref_add_global_constants!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+    for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
+        nw_ref[:total_real_load] = calc_total_real_load(nw_ref[:load])
+        nw_ref[:total_reactive_load] = calc_total_reactive_load(nw_ref[:load])
+    end
+end
+
 # functions to enumerate sub tours:
 #       - genSubTour: generate a list of cycles, each item as a set with the buses cycled through
 #       - findCycle: with two paths forming a cycle, extracting the cycle
@@ -309,6 +316,7 @@ function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     ref_add_gen_ne!(ref, data)
     ref_add_switch_inline_ne!(ref,data)
     ref_add_undamaged_branch!(ref,data)
+    ref_add_global_constants!(ref,data)
 #    ref_add_vm_imbalance!(ref, data)
 #    ref_add_pq_imbalance!(ref, data)
 #    ref_add_subtour!(ref, data)

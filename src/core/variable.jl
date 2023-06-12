@@ -174,6 +174,7 @@ function variable_he_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id
                 start=_PMD.comp_start_value(_PMD.ref(pm, nw, :branch, i), "he_start", i, 0.0)
              )
      end
+
     report && _IM.sol_component_value(pm, _PMD.pmd_it_sym, nw, :branch, :he_s, _PMD.ref(pm, nw, :branch_harden), he_s)
 end
 

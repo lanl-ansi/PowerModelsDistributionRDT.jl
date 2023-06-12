@@ -92,3 +92,109 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedACPModel
         _PMD.sol(pm, nw, :bus, i)[:lam_kcl_i] = cstr_q
     end
 end
+
+
+
+@doc raw"""
+    constraint_mc_ampacity_from_damaged(pm::AbstractUnbalancedACPModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches from-side for damaged branches
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq vm_{fr}^2 i_{max}^2 *he_s
+```
+"""
+function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_fr  = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr  = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    vm_fr = [_PMD.var(pm, nw, :vm, f_idx[2])[c] for c in f_connections]
+    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vm_fr[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= vm_fr[idx]^2 * c_rating[idx]^2 * he_s) for idx in f_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
+    end
+
+    nothing
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_to(pm::AbstractUnbalancedACPModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches to-side for damaged branches
+
+math```
+p_{to}^2 + q_{to}^2 \leq vm_{to}^2 i_{max}^2 * he_s
+```
+"""
+function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    vm_to = [_PMD.var(pm, nw, :vm, t_idx[2])[c] for c in t_connections]
+    he_s  = _PMD.var(pm, nw, :he_s, t_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vm_to[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= vm_to[idx]^2 * c_rating[idx]^2 * he_s) for idx in t_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
+    end
+
+    nothing
+end
+
+
+
+@doc raw"""
+    constraint_mc_ampacity_from_ne(pm::AbstractUnbalancedACPModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches from-side for ne branches
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq vm_{fr}^2 i_{max}^2 *xe_s
+```
+"""
+function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_fr  = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr  = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    vm_fr = [_PMD.var(pm, nw, :vm, f_idx[2])[c] for c in f_connections]
+    xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vm_fr[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= vm_fr[idx]^2 * c_rating[idx]^2 * xe_s) for idx in f_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, f_idx[1])[:mu_cm_fr_ne] = mu_cm_fr
+    end
+
+    nothing
+end
+
+
+@doc raw"""
+    constraint_mc_ampacity_to_ne(pm::AbstractUnbalancedACPModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on branches to-side for ne branches
+
+math```
+p_{to}^2 + q_{to}^2 \leq vm_{to}^2 i_{max}^2 * xe_s
+```
+"""
+function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    vm_to = [_PMD.var(pm, nw, :vm, t_idx[2])[c] for c in t_connections]
+    xe_s  = _PMD.var(pm, nw, :xe_s, t_idx[1])
+
+    # TODO: maybe introduce an auxillary varaible v_sqr = vm_to[idx]^2, and do exact McCormick on v_sqr * he_s
+    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= vm_to[idx]^2 * c_rating[idx]^2 * xe_s) for idx in t_connections]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to
+    end
+
+    nothing
+end
