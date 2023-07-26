@@ -114,6 +114,9 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
             constraint_mc_thermal_limit_from_ne(pm, i; nw=n) # constraint 2d
             constraint_mc_thermal_limit_to_ne(pm, i; nw=n) # constraint 2d
 
+            constraint_mc_ampacity_from_ne(pm, i; nw=n) # not in paper, but fine to include
+            constraint_mc_ampacity_to_ne(pm, i; nw=n) # not in paper, but fine to include
+
             ### some stuff
         end
 

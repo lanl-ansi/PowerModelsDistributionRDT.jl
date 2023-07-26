@@ -157,8 +157,8 @@ p_{fr}^2 + q_{fr}^2 \leq (vr_{fr}^2 + vi_{fr}^2) i_{max}^2 * xe_s
 ```
 """
 function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_fr = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
-    q_fr = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    p_fr = [_PMD.var(pm, nw, :p_ne, f_idx)[c] for c in f_connections]
+    q_fr = [_PMD.var(pm, nw, :q_ne, f_idx)[c] for c in f_connections]
     vr_fr = [_PMD.var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
     vi_fr = [_PMD.var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
     xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
@@ -183,14 +183,14 @@ math```
 p_{to}^2 + q_{to}^2 \leq (vr_{to}^2 + vi_{to}^2) i_{max}^2 * he_s
 ```
 """
-function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_to = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
-    q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to = [_PMD.var(pm, nw, :p_ne, t_idx)[c] for c in t_connections]
+    q_to = [_PMD.var(pm, nw, :q_ne, t_idx)[c] for c in t_connections]
     vr_to = [_PMD.var(pm, nw, :vr, t_idx[2])[c] for c in t_connections]
     vi_to = [_PMD.var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
     xe_s  = _PMD.var(pm, nw, :xe_s, t_idx[1])
 
-    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * he_s
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * xe_s
     _PMD.con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
 
     if _IM.report_duals(pm)

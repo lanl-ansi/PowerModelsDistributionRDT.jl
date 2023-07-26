@@ -229,8 +229,8 @@ p_{fr}^2 + q_{fr}^2 \leq w_{fr} i_{max}^2 * xe_s
 ```
 """
 function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedWModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_fr       = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
-    q_fr       = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    p_fr       = [_PMD.var(pm, nw, :p_ne, f_idx)[c] for c in f_connections]
+    q_fr       = [_PMD.var(pm, nw, :q_ne, f_idx)[c] for c in f_connections]
     w_fr       = [_PMD.var(pm, nw, :w, f_idx[2])[c] for c in f_connections]
     xe_s       = _PMD.var(pm, nw, :xe_s, f_idx[1])
     xe_s_w_fr  = [_PMD.var(pm, nw, :xe_s_w_fr, f_idx[1])[c] for c in f_connections]
@@ -259,9 +259,9 @@ math```
 p_{to}^2 + q_{to}^2 \leq w_{to} i_{max}^2 # xe_s
 ```
 """
-function constraint_mc_ampacity_to_xe(pm::_PMD.AbstractUnbalancedWModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_to       = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
-    q_to       = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
+function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedWModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    p_to       = [_PMD.var(pm, nw, :p_ne, t_idx)[c] for c in t_connections]
+    q_to       = [_PMD.var(pm, nw, :q_ne, t_idx)[c] for c in t_connections]
     w_to       = [_PMD.var(pm, nw, :w, t_idx[2])[c] for c in t_connections]
     xe_s       = _PMD.var(pm, nw, :xe_s, t_idx[1])
     xe_s_w_to  = [_PMD.var(pm, nw, :xe_s_w_to, t_idx[1])[c] for c in t_connections]
