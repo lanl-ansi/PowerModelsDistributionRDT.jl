@@ -414,7 +414,7 @@ function scenarios2_mn!(data::Dict{String,Any}, lookups::Dict{Symbol,Any})
     for (s, scenario) in data["scenarios"]
         pm_data = data["nw"][s]
 
-        for id in scenario["hardened_disabled_lines"]
+        for id in get(scenario,"hardened_disabled_lines", [])
             i = parse(Int64, id)
             if haskey(pm_data["branch"], id)
                 push!(pm_data["damaged_hardened_branch"], i)

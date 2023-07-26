@@ -2,7 +2,7 @@
 @testset "test data input" begin
 
     @testset "json parser" begin
-        data = _RDT.parse_file("../test/data/example.json")
+        data = _RDT.parse_file(example_data)
 
         @test data["multinetwork"]
         @test haskey(data["nw"]["2"], "damaged_branch")
@@ -26,7 +26,7 @@
 #     end
 
      @testset "test ref input" begin
-         data = _RDT.parse_file("../test/data/example.json")
+         data = _RDT.parse_file(example_data)
          pm = _PMD.instantiate_mc_model(data, _PMD.LinDist3FlowPowerModel, build_mc_rdt; ref_extensions=[ref_add_rdt!],  eng2math_extensions=[_RDT.transform_switch_inline_ne!,_RDT.transform_switch_inline!], multinetwork=true)
 
          @test length(_PMD.ref(pm, 0, :damaged_branch)) == 0
