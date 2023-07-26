@@ -109,8 +109,8 @@ function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedRectangu
     vi_fr = [_PMD.var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
     he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
 
-    # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s
-    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * he_s) for idx in f_connections]
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
+    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * he_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
@@ -136,8 +136,8 @@ function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedRectangula
     vi_to = [_PMD.var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
     he_s  = _PMD.var(pm, nw, :he_s, t_idx[1])
 
-    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * he_s
-    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * he_s) for idx in t_connections]
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
+    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * he_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
@@ -163,8 +163,8 @@ function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedRectangularMo
     vi_fr = [_PMD.var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
     xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
 
-    # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s
-    _PMD.con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * xe_s) for idx in f_connections]
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
+    _PMD.con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * xe_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch_ne, f_idx[1])[:mu_cm_fr_ne] = mu_cm_fr
@@ -190,8 +190,8 @@ function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedRectangularMode
     vi_to = [_PMD.var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
     xe_s  = _PMD.var(pm, nw, :xe_s, t_idx[1])
 
-    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * xe_s
-    _PMD.con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
+    # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * xe_s (and use @constraint)
+    _PMD.con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         _PMD.sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to

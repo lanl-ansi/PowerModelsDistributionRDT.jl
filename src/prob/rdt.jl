@@ -3,12 +3,13 @@ function solve_rdt(data::Dict{String,Any}, model_type, solver; kwargs...)
     return _PMD.solve_mc_model(data, model_type, solver, build_mc_rdt; multinetwork=true, ref_extensions=[ref_add_rdt!], eng2math_extensions=[transform_switch_inline_ne!,transform_switch_inline!], kwargs...)
 end
 
-function build_mc_rdt(pm::_PMD.AbstractUBFModels)
+function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
     variable_he(pm); # 1d h_e variables
     variable_te(pm; relax=true); # 1d t_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
     variable_xe(pm); # 1d x_e variables
     variable_ue(pm); # 1d u_e variables
 
+    # TODO revisit which variables are relaxed
     for n in _IM.nw_ids(pm, _PMD.pmd_it_sym)
         _PMD.variable_mc_bus_voltage_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_bus_voltage_on_off(pm; nw=n);  # is this necessary ?
@@ -24,6 +25,8 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
         variable_mc_generator_ne_power_on_off(pm; nw=n);
         _PMD.variable_mc_load_indicator(pm; nw=n, relax=true);
         _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true);
+        _PMD.variable_mc_storage_indicator(pm; nw=n, relax=true)
+        _PMD.variable_mc_storage_power_mi_on_off(pm; nw=n, relax=true)
 
 #        variable_branch_be(pm) # b_e variables
 
@@ -57,9 +60,9 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
         _PMD.constraint_mc_model_voltage(pm; nw=n);   # Some forms of the power flow equations have special constraints to link voltages together.  Most power flow models don't use this
 
 
-#        for i in _PMs.ids(pm, :bus_bal)
-#            constraint_mc_vm_vuf(pm, i) # voltage imbalance constraint
-#        end
+        #for i in ids(pm, :bus)
+            #_PMD.constraint_mc_power_balance(pm, i; nw=n)
+        #end
 
         for i in _PMD.ids(pm, n, :ref_buses)
             _PMD.constraint_mc_theta_ref(pm, i; nw=n) # slack bus constraint
@@ -84,8 +87,8 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
         end
 
         for i in _PMD.ref(pm, n, :undamaged_branch)
-            _PMD.constraint_mc_power_losses(pm, i; nw=n)
-            _PMD.constraint_mc_model_voltage_magnitude_difference(pm, i, nw=n)
+            _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n)
+            _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n)
 
             _PMD.constraint_mc_voltage_angle_difference(pm, i; nw=n) # not in paper, but fine to include
 
@@ -95,7 +98,6 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
             _PMD.constraint_mc_ampacity_from(pm, i; nw=n) # not in paper, but fine to include
             _PMD.constraint_mc_ampacity_to(pm, i; nw=n) # not in paper, but fine to include
 
-#            constraint_cycle_function(pm, i; nw=n)
             # constraint 2b is implict
         end
 
@@ -116,6 +118,8 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
 
             constraint_mc_ampacity_from_ne(pm, i; nw=n) # not in paper, but fine to include
             constraint_mc_ampacity_to_ne(pm, i; nw=n) # not in paper, but fine to include
+
+            # constraint 2b is implict
 
             ### some stuff
         end
@@ -148,14 +152,18 @@ function build_mc_rdt(pm::_PMD.AbstractUBFModels)
         end
 
 
-#        for i in ids(pm, n, :storage)
-#               _PMD.constraint_storage_state(pm, i; nw=n)
-#               _PMD.constraint_storage_complementarity_nl(pm, i; nw=n)
-#               _PMD.constraint_mc_storage_losses(pm, i; nw=n)
-#               _PMD.constraint_mc_storage_thermal_limit(pm, i; nw=n)
-#           end
+        for i in _PMD.ids(pm, n, :storage)
+            _PMD.constraint_storage_state(pm, i; nw=n)
+            _PMD.constraint_storage_complementarity_mi(pm, i; nw=n)
+            _PMD.constraint_mc_storage_on_off(pm, i; nw=n)
+            _PMD.constraint_mc_storage_losses(pm, i; nw=n)
+            _PMD.constraint_mc_storage_thermal_limit(pm, i; nw=n)
+        end
 
     end
+
+    #            constraint_cycle_function(pm, i; nw=n)
+
 
     objective_rdt(pm)
 end

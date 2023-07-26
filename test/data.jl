@@ -27,7 +27,7 @@
 
      @testset "test ref input" begin
          data = _RDT.parse_file(example_data)
-         pm = _PMD.instantiate_mc_model(data, _PMD.LinDist3FlowPowerModel, build_mc_rdt; ref_extensions=[ref_add_rdt!],  eng2math_extensions=[_RDT.transform_switch_inline_ne!,_RDT.transform_switch_inline!], multinetwork=true)
+         pm = _PMD.instantiate_mc_model(data, _PMD.ACPUPowerModel, build_mc_rdt; ref_extensions=[ref_add_rdt!],  eng2math_extensions=[_RDT.transform_switch_inline_ne!,_RDT.transform_switch_inline!], multinetwork=true)
 
          @test length(_PMD.ref(pm, 0, :damaged_branch)) == 0
          @test length(_PMD.ref(pm, 0, :undamaged_branch)) == length(_PMD.ref(pm, 0, :branch))
