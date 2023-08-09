@@ -279,3 +279,32 @@ function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedWModels, nw::In
 
     nothing
 end
+
+""
+function constraint_mc_voltage_angle_difference_damaged(pm::_PMD.AbstractUnbalancedPolarModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, angmin::Vector{<:Real}, angmax::Vector{<:Real})
+    i, f_bus, t_bus = f_idx
+
+    va_fr = [_PMD.var(pm, nw, :va, f_bus)[fc] for fc in f_connections]
+    va_to = [_PMD.var(pm, nw, :va, t_bus)[tc] for tc in t_connections]
+    he_s  = _PMD.var(pm, nw, :he_s, i)
+
+    #TODO: A bit lazy, but this is how PowerModels.jl does on_off on phase angle difference constraints because va is unbounded.  In practice, if he_s is binary, we should do McCormick
+    # on the lhs, and this constraint otherwise.  If we have an analytical result on the largest phase angle difference across the network, we could also make this a big-M style on-off constraint.
+    JuMP.@constraint(pm.model, he_s * (va_fr .- va_to) .<= he_s * angmax)
+    JuMP.@constraint(pm.model, he_s * (va_fr .- va_to) .>= he_s * angmin)
+end
+
+
+""
+function constraint_mc_voltage_angle_difference_ne(pm::_PMD.AbstractUnbalancedPolarModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, angmin::Vector{<:Real}, angmax::Vector{<:Real})
+    i, f_bus, t_bus = f_idx
+
+    va_fr = [_PMD.var(pm, nw, :va, f_bus)[fc] for fc in f_connections]
+    va_to = [_PMD.var(pm, nw, :va, t_bus)[tc] for tc in t_connections]
+    xe_s  = _PMD.var(pm, nw, :xe_s, i)
+
+    #TODO: A bit lazy, but this is how PowerModels.jl does on_off on phase angle difference constraints because va is unbounded.  In practice, if he_s is binary, we should do McCormick
+    # on the lhs, and this constraint otherwise.  If we have an analytical result on the largest phase angle difference across the network, we could also make this a big-M style on-off constraint.
+    JuMP.@constraint(pm.model, xe_s * (va_fr .- va_to) .<= xe_s * angmax)
+    JuMP.@constraint(pm.model, xe_s * (va_fr .- va_to) .>= xe_s * angmin)
+end

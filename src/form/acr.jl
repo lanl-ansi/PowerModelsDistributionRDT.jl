@@ -199,3 +199,39 @@ function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedRectangularMode
 
     nothing
 end
+
+
+""
+function constraint_mc_voltage_angle_difference_damaged(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, angmin::Vector{<:Real}, angmax::Vector{<:Real})
+    i, f_bus, t_bus = f_idx
+
+    vr_fr = _PMD.var(pm, nw, :vr, f_bus)
+    vi_fr = _PMD.var(pm, nw, :vi, f_bus)
+    vr_to = _PMD.var(pm, nw, :vr, t_bus)
+    vi_to = _PMD.var(pm, nw, :vi, t_bus)
+    he_s  = _PMD.var(pm, nw, :he_s, i)
+
+    #TODO: A bit lazy, but this is how PowerModels.jl does on_off on phase angle difference constraints.  If we had the absolute maximum voltage angle difference, from bound on the v variables
+    for (idx, (fc,tc)) in enumerate(zip(f_connections, t_connections))
+        JuMP.@constraint(pm.model, he_s * (vi_fr[fc] * vr_to[tc] .- vr_fr[fc] * vi_to[tc]) <= he_s * tan(angmax[idx]) * (vr_fr[fc] * vr_to[tc] .+ vi_fr[fc] * vi_to[tc]))
+        JuMP.@constraint(pm.model, he_s * (vi_fr[fc] * vr_to[tc] .- vr_fr[fc] * vi_to[tc]) >= he_s * tan(angmin[idx]) * (vr_fr[fc] * vr_to[tc] .+ vi_fr[fc] * vi_to[tc]))
+    end
+end
+
+
+""
+function constraint_mc_voltage_angle_difference_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, angmin::Vector{<:Real}, angmax::Vector{<:Real})
+    i, f_bus, t_bus = f_idx
+
+    vr_fr = _PMD.var(pm, nw, :vr, f_bus)
+    vi_fr = _PMD.var(pm, nw, :vi, f_bus)
+    vr_to = _PMD.var(pm, nw, :vr, t_bus)
+    vi_to = _PMD.var(pm, nw, :vi, t_bus)
+    xe_s  = _PMD.var(pm, nw, :xe_s, i)
+
+    #TODO: A bit lazy, but this is how PowerModels.jl does on_off on phase angle difference constraints.  If we had the absolute maximum voltage angle difference, from bound on the v variables
+    for (idx, (fc,tc)) in enumerate(zip(f_connections, t_connections))
+        JuMP.@constraint(pm.model, xe_s * (vi_fr[fc] * vr_to[tc] .- vr_fr[fc] * vi_to[tc]) <= xe_s * tan(angmax[idx]) * (vr_fr[fc] * vr_to[tc] .+ vi_fr[fc] * vi_to[tc]))
+        JuMP.@constraint(pm.model, xe_s * (vi_fr[fc] * vr_to[tc] .- vr_fr[fc] * vi_to[tc]) >= xe_s * tan(angmin[idx]) * (vr_fr[fc] * vr_to[tc] .+ vi_fr[fc] * vi_to[tc]))
+    end
+end

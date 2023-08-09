@@ -296,6 +296,36 @@ function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::
 end
 
 
+"""
+    constraint_mc_voltage_angle_difference_damaged(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for constraints of the voltage angle difference across branches that are damaged
+"""
+function constraint_mc_voltage_angle_difference_damaged(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+
+    constraint_mc_voltage_angle_difference_damaged(pm, nw, f_idx, branch["f_connections"], branch["t_connections"], branch["angmin"], branch["angmax"])
+    nothing
+end
+
+
+"""
+    constraint_mc_voltage_angle_difference_damaged(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for constraints of the voltage angle difference across branches that are expansion
+"""
+function constraint_mc_voltage_angle_difference_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    branch = _PMD.ref(pm, nw, :branch_ne, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+
+    constraint_mc_voltage_angle_difference_ne(pm, nw, f_idx, branch["f_connections"], branch["t_connections"], branch["angmin"], branch["angmax"])
+    nothing
+end
 
 #function constraint_mc_vm_vuf(pm::_PMs.AbstractPowerModel, bus_id::Int; nw::Int=pm.cnw)
 #    bus = _PMs.ref(pm, nw, :bus_bal)[bus_id]
