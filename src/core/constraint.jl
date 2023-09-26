@@ -346,25 +346,3 @@ end
 #    ye = _PMs.var(pm, nw, :ye_s, arcs)
 #    JuMP.@constraint(pm.model, z <= ye)
 #end
-
-
-function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
-    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
-    constraint_mc_ohms_yt_from_on_off(pm, nw, f_bus, t_bus, f_idx, t_idx, f_connections, t_connections, G, B, G_fr, B_fr, vad_min, vad_max, he_s)
-end
-
-
-function constraint_mc_ohms_yt_to_damaged(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_to::Matrix{<:Real}, B_to::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
-    he_s  = _PMD.var(pm, nw, :he_s, t_idx[1])
-    constraint_mc_ohms_yt_to_on_off(pm, nw, f_bus, t_bus, f_idx, t_idx, f_connections, t_connections, G, B, G_to, B_to, vad_min, vad_max, he_s)
-end
-
-function constraint_mc_ohms_yt_from_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
-    xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
-    constraint_mc_ohms_yt_from_on_off(pm, nw, f_bus, t_bus, f_idx, t_idx, f_connections, t_connections, G, B, G_fr, B_fr, vad_min, vad_max, xe_s)
-end
-
-function constraint_mc_ohms_yt_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_to::Matrix{<:Real}, B_to::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
-    xe_s  = _PMD.var(pm, nw, :xe_s, t_idx[1])
-    constraint_mc_ohms_yt_to_on_off(pm, nw, f_bus, t_bus, f_idx, t_idx, f_connections, t_connections, G, B, G_to, B_to, vad_min, vad_max, xe_s)
-end

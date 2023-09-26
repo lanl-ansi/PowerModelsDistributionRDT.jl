@@ -284,9 +284,6 @@ function constraint_mc_ohms_yt_to_damaged(pm::_PMD.AbstractUnbalancedACRModel, n
 end
 
 
-
-
-
 """
 Creates Ohms constraints for ne lines
 

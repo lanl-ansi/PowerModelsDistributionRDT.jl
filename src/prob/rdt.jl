@@ -11,8 +11,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 
     # TODO revisit which variables are relaxed
     for n in _IM.nw_ids(pm, _PMD.pmd_it_sym)
-        _PMD.variable_mc_bus_voltage_indicator(pm; nw=n, relax=true);
-        _PMD.variable_mc_bus_voltage_on_off(pm; nw=n);  # is this necessary ?
+        _PMD.variable_mc_bus_voltage(pm; nw=n) # constraint 2e
         _PMD.variable_mc_branch_power(pm; nw=n);
          variable_mc_branch_ne_power(pm; nw=n);
         _PMD.variable_mc_transformer_power(pm; nw=n);
