@@ -87,8 +87,8 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
 
         for i in _PMD.ref(pm, n, :undamaged_branch)
-            _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n)
-            _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n)
+            _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n) #constraint 2a
+            _PMD.constraint_mc_ohms_yt_to(pm, i; nw=n) #constraint 2a
 
             _PMD.constraint_mc_voltage_angle_difference(pm, i; nw=n) # not in paper, but fine to include
 
@@ -102,6 +102,8 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
 
         for i in _PMD.ref(pm, n, :damaged_branch) # need to break this out into damaged and un damaged branches
+            constraint_mc_ohms_yt_from_damaged(pm, i; nw=n) #constraint 2a
+            constraint_mc_ohms_yt_to_damaged(pm, i; nw=n) #constraint 2a
 
             constraint_mc_voltage_angle_difference_damaged(pm, i; nw=n) # not in paper, but fine to include
 
@@ -116,9 +118,11 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
 
         for i in _PMD.ids(pm, n, :branch_ne)
+            constraint_mc_ohms_yt_from_ne(pm, i; nw=n) #constraint 2a
+            constraint_mc_ohms_yt_to_ne(pm, i; nw=n) #constraint 2a
 
             constraint_mc_voltage_angle_difference_ne(pm, i; nw=n) # not in paper, but fine to include
-            
+
             constraint_mc_thermal_limit_from_ne(pm, i; nw=n) # constraint 2d
             constraint_mc_thermal_limit_to_ne(pm, i; nw=n) # constraint 2d
 

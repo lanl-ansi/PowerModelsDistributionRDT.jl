@@ -182,6 +182,7 @@ function ref_add_global_constants!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:
     for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
         nw_ref[:total_real_load] = calc_total_real_load(nw_ref[:load])
         nw_ref[:total_reactive_load] = calc_total_reactive_load(nw_ref[:load])
+        nw_ref[:off_angmin], nw_ref[:off_angmax] = calc_theta_delta_bounds(data["nw"][string(nw)])
     end
 end
 

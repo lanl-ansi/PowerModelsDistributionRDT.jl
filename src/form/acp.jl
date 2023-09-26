@@ -199,3 +199,150 @@ function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::I
 
     nothing
 end
+
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for damaged lines
+
+```
+p_fr ==    he * g[c,c] * vm_fr[c]^2 +
+            sum( g[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) +
+                 b[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c) +
+            sum(-g[c,d]*vm_fr[c]*vm_to[d]*cos(va_fr[c]-va_to[d]) +
+                -b[c,d]*vm_fr[c]*vm_to[d]*sin(va_fr[c]-va_to[d]) for d in conductor_ids(pm))
+            + g_fr[c,c] * vm_fr[c]^2 +
+            sum( g_fr[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) +
+                 b_fr[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c)
+            )
+q_fr == he * -b[c,c] *vm_fr[c]^2 -
+            sum( b[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) -
+                 g[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c) -
+            sum(-b[c,d]*vm_fr[c]*vm_to[d]*cos(va_fr[c]-va_to[d]) +
+                 g[c,d]*vm_fr[c]*vm_to[d]*sin(va_fr[c]-va_to[d]) for d in conductor_ids(pm))
+            -b_fr[c,c] *vm_fr[c]^2 -
+            sum( b_fr[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) -
+                 g_fr[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c)
+            )
+```
+"""
+function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    p_fr  = _PMD.var(pm, nw,  :p, f_idx)
+    q_fr  = _PMD.var(pm, nw,  :q, f_idx)
+    vm_fr = _PMD.var(pm, nw, :vm, f_bus)
+    vm_to = _PMD.var(pm, nw, :vm, t_bus)
+    va_fr = _PMD.var(pm, nw, :va, f_bus)
+    va_to = _PMD.var(pm, nw, :va, t_bus)
+    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+
+    ohms_yt_p = JuMP.ConstraintRef[]
+    ohms_yt_q = JuMP.ConstraintRef[]
+    for (idx, (fc,tc)) in enumerate(zip(f_connections,t_connections))
+        push!(ohms_yt_p, JuMP.@NLconstraint(pm.model, p_fr[fc] == he_s * ((G[idx,idx]+G_fr[idx,idx])*vm_fr[fc]^2
+            +sum( (G[idx,jdx]+G_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
+                 +(B[idx,jdx]+B_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)
+            +sum( -G[idx,jdx]*vm_fr[fc]*vm_to[td]*cos(va_fr[fc]-va_to[td])
+                  -B[idx,jdx]*vm_fr[fc]*vm_to[td]*sin(va_fr[fc]-va_to[td])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections))))
+            )
+        )
+
+        push!(ohms_yt_q, JuMP.@NLconstraint(pm.model, q_fr[fc] == he_s * (-(B[idx,idx]+B_fr[idx,idx])*vm_fr[fc]^2
+            -sum( (B[idx,jdx]+B_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
+                 -(G[idx,jdx]+G_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)
+            -sum(-B[idx,jdx]*vm_fr[fc]*vm_to[td]*cos(va_fr[fc]-va_to[td])
+                 +G[idx,jdx]*vm_fr[fc]*vm_to[td]*sin(va_fr[fc]-va_to[td])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections))))
+            )
+        )
+    end
+    _PMD.con(pm, nw, :ohms_yt)[f_idx] = [ohms_yt_p, ohms_yt_q]
+end
+
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for damaged lines
+
+```
+p[t_idx] ==  (g+g_to)*v[t_bus]^2 + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[t_bus]-t[f_bus])) + (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+q[t_idx] == -(b+b_to)*v[t_bus]^2 - (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[f_bus]-t[t_bus])) + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+```
+"""
+function constraint_mc_ohms_yt_to_damaged(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_to::Matrix{<:Real}, B_to::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    constraint_mc_ohms_yt_from_damaged(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
+end
+
+
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for ne lines
+
+```
+p_fr ==    he * g[c,c] * vm_fr[c]^2 +
+            sum( g[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) +
+                 b[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c) +
+            sum(-g[c,d]*vm_fr[c]*vm_to[d]*cos(va_fr[c]-va_to[d]) +
+                -b[c,d]*vm_fr[c]*vm_to[d]*sin(va_fr[c]-va_to[d]) for d in conductor_ids(pm))
+            + g_fr[c,c] * vm_fr[c]^2 +
+            sum( g_fr[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) +
+                 b_fr[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c)
+            )
+q_fr == he * -b[c,c] *vm_fr[c]^2 -
+            sum( b[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) -
+                 g[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c) -
+            sum(-b[c,d]*vm_fr[c]*vm_to[d]*cos(va_fr[c]-va_to[d]) +
+                 g[c,d]*vm_fr[c]*vm_to[d]*sin(va_fr[c]-va_to[d]) for d in conductor_ids(pm))
+            -b_fr[c,c] *vm_fr[c]^2 -
+            sum( b_fr[c,d]*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d]) -
+                 g_fr[c,d]*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d]) for d in conductor_ids(pm) if d != c)
+            )
+```
+"""
+function constraint_mc_ohms_yt_from_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    p_fr  = _PMD.var(pm, nw,  :p_ne, f_idx)
+    q_fr  = _PMD.var(pm, nw,  :q_ne, f_idx)
+    vm_fr = _PMD.var(pm, nw, :vm, f_bus)
+    vm_to = _PMD.var(pm, nw, :vm, t_bus)
+    va_fr = _PMD.var(pm, nw, :va, f_bus)
+    va_to = _PMD.var(pm, nw, :va, t_bus)
+    xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
+
+    ohms_yt_p = JuMP.ConstraintRef[]
+    ohms_yt_q = JuMP.ConstraintRef[]
+    for (idx, (fc,tc)) in enumerate(zip(f_connections,t_connections))
+        push!(ohms_yt_p, JuMP.@NLconstraint(pm.model, p_fr[fc] == xe_s * ((G[idx,idx]+G_fr[idx,idx])*vm_fr[fc]^2
+            +sum( (G[idx,jdx]+G_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
+                 +(B[idx,jdx]+B_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)
+            +sum( -G[idx,jdx]*vm_fr[fc]*vm_to[td]*cos(va_fr[fc]-va_to[td])
+                  -B[idx,jdx]*vm_fr[fc]*vm_to[td]*sin(va_fr[fc]-va_to[td])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections))))
+            )
+        )
+
+        push!(ohms_yt_q, JuMP.@NLconstraint(pm.model, q_fr[fc] == xe_s * (-(B[idx,idx]+B_fr[idx,idx])*vm_fr[fc]^2
+            -sum( (B[idx,jdx]+B_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
+                 -(G[idx,jdx]+G_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)
+            -sum(-B[idx,jdx]*vm_fr[fc]*vm_to[td]*cos(va_fr[fc]-va_to[td])
+                 +G[idx,jdx]*vm_fr[fc]*vm_to[td]*sin(va_fr[fc]-va_to[td])
+                for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections))))
+            )
+        )
+    end
+    _PMD.con(pm, nw, :ohms_yt)[f_idx] = [ohms_yt_p, ohms_yt_q]
+end
+
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for ne lines
+
+```
+p[t_idx] ==  (g+g_to)*v[t_bus]^2 + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[t_bus]-t[f_bus])) + (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+q[t_idx] == -(b+b_to)*v[t_bus]^2 - (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[f_bus]-t[t_bus])) + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+```
+"""
+function constraint_mc_ohms_yt_to_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_to::Matrix{<:Real}, B_to::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    constraint_mc_ohms_yt_from_ne(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
+end

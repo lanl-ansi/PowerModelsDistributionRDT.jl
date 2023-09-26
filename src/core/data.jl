@@ -88,3 +88,50 @@ function calc_branch_power_max(branch::Dict{String,<:Any}, bus::Dict{String,<:An
         return max_power
     end
 end
+
+
+"TODO: This is a (likely) incorrect hack that should ultimate live in PowerModelsDistribution?"
+function calc_theta_delta_bounds(data::Dict{String,<:Any})
+    bus_count = length(data["bus"])
+    branches = [branch for branch in values(data["branch"])]
+    if haskey(data, "ne_branch")
+        append!(branches, values(data["ne_branch"]))
+    end
+
+    angle_min = Real[]
+    angle_max = Real[]
+
+    conductors = 1
+    if haskey(data, "conductors")
+        conductors = data["conductors"]
+    end
+    conductor_ids = 1:conductors
+
+    for c in conductor_ids
+        angle_mins = [branch["angmin"][c] for branch in branches]
+        angle_maxs = [branch["angmax"][c] for branch in branches]
+
+        sort!(angle_mins)
+        sort!(angle_maxs, rev=true)
+
+        if length(angle_mins) > 1
+            # note that, this can occur when dclines are present
+            angle_count = min(bus_count-1, length(branches))
+
+            angle_min_val = sum(angle_mins[1:angle_count])
+            angle_max_val = sum(angle_maxs[1:angle_count])
+        else
+            angle_min_val = angle_mins[1]
+            angle_max_val = angle_maxs[1]
+        end
+
+        push!(angle_min, angle_min_val)
+        push!(angle_max, angle_max_val)
+    end
+
+    if haskey(data, "conductors")
+        return angle_min, angle_max
+    else
+        return angle_min[1], angle_max[1]
+    end
+end

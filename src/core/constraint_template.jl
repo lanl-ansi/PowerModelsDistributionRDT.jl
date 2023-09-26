@@ -327,6 +327,137 @@ function constraint_mc_voltage_angle_difference_ne(pm::_PMD.AbstractUnbalancedPo
     nothing
 end
 
+
+
+# Branch constraints
+
+"""
+    constraint_mc_ohms_yt_from(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+
+Template function for ohms constraint for branches on the from-side for damaged lines
+"""
+function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+    branch = _PMD.ref(pm, nw, :branch, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+    t_idx = (i, t_bus, f_bus)
+
+    vad_min = _PMD.ref(pm, nw, :off_angmin)
+    vad_max = _PMD.ref(pm, nw, :off_angmax)
+
+    if all(all(isapprox.(branch[k], 0.0)) for k in ["br_r", "br_x", "g_fr", "g_to", "b_fr", "b_to"])
+        @debug "branch $(branch["source_id"]) being treated as superconducting (effective zero impedance)"
+        if !haskey(_PMD.con(pm, nw), :branch_flow)
+            _PMD.con(pm, nw)[:branch_flow] = Dict{Int,Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        constraint_mc_branch_flow_damaged(pm, nw, f_idx, t_idx, branch["f_connections"], branch["t_connections"])
+    else
+        if !haskey(_PMD.con(pm, nw), :ohms_yt_from)
+            _PMD.con(pm, nw)[:ohms_yt] = Dict{Tuple{Int,Int,Int},Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        G, B = _PMD.calc_branch_y(branch)
+        constraint_mc_ohms_yt_from_damaged(pm, nw, f_bus, t_bus, f_idx, t_idx, branch["f_connections"], branch["t_connections"], G, B, branch["g_fr"], branch["b_fr"], vad_min, vad_max)
+    end
+end
+
+
+"""
+    constraint_mc_ohms_yt_to(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+
+Template function for ohms constraint for branches on the to-side for damaged lines
+"""
+function constraint_mc_ohms_yt_to_damaged(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+    branch = _PMD.ref(pm, nw, :branch, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+    t_idx = (i, t_bus, f_bus)
+
+    vad_min = _PMD.ref(pm, nw, :off_angmin)
+    vad_max = _PMD.ref(pm, nw, :off_angmax)
+
+    if all(all(isapprox.(branch[k], 0.0)) for k in ["br_r", "br_x", "g_fr", "g_to", "b_fr", "b_to"])
+        @debug "branch $(branch["source_id"]) being treated as superconducting (effective zero impedance)"
+        if !haskey(_PMD.con(pm, nw), :branch_flow)
+            _PMD.con(pm, nw)[:branch_flow] = Dict{Int,Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        constraint_mc_branch_flow_damaged(pm, nw, f_idx, t_idx, branch["f_connections"], branch["t_connections"])
+    else
+        if !haskey(_PMD.con(pm, nw), :ohms_yt_to)
+            _PMD.con(pm, nw)[:ohms_yt] = Dict{Tuple{Int,Int,Int},Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        G, B = _PMD.calc_branch_y(branch)
+        constraint_mc_ohms_yt_to_damaged(pm, nw, f_bus, t_bus, f_idx, t_idx, branch["f_connections"], branch["t_connections"], G, B, branch["g_to"], branch["b_to"], vad_min, vad_max)
+    end
+end
+
+
+"""
+    constraint_mc_ohms_yt_from(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+
+Template function for ohms constraint for branches on the from-side for ne lines
+"""
+function constraint_mc_ohms_yt_from_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+    branch = _PMD.ref(pm, nw, :branch_ne, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+    t_idx = (i, t_bus, f_bus)
+
+    vad_min = _PMD.ref(pm, nw, :off_angmin)
+    vad_max = _PMD.ref(pm, nw, :off_angmax)
+
+    if all(all(isapprox.(branch[k], 0.0)) for k in ["br_r", "br_x", "g_fr", "g_to", "b_fr", "b_to"])
+        @debug "branch $(branch["source_id"]) being treated as superconducting (effective zero impedance)"
+        if !haskey(_PMD.con(pm, nw), :branch_flow)
+            _PMD.con(pm, nw)[:branch_flow] = Dict{Int,Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        constraint_mc_branch_flow_damaged(pm, nw, f_idx, t_idx, branch["f_connections"], branch["t_connections"])
+    else
+        if !haskey(_PMD.con(pm, nw), :ohms_yt_from)
+            _PMD.con(pm, nw)[:ohms_yt] = Dict{Tuple{Int,Int,Int},Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        G, B = _PMD.calc_branch_y(branch)
+        constraint_mc_ohms_yt_from_ne(pm, nw, f_bus, t_bus, f_idx, t_idx, branch["f_connections"], branch["t_connections"], G, B, branch["g_fr"], branch["b_fr"], vad_min, vad_max)
+    end
+end
+
+
+"""
+    constraint_mc_ohms_yt_to(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+
+Template function for ohms constraint for branches on the to-side for ne lines
+"""
+function constraint_mc_ohms_yt_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+    branch = _PMD.ref(pm, nw, :branch_ne, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+    t_idx = (i, t_bus, f_bus)
+
+    vad_min = _PMD.ref(pm, nw, :off_angmin)
+    vad_max = _PMD.ref(pm, nw, :off_angmax)
+
+    if all(all(isapprox.(branch[k], 0.0)) for k in ["br_r", "br_x", "g_fr", "g_to", "b_fr", "b_to"])
+        @debug "branch $(branch["source_id"]) being treated as superconducting (effective zero impedance)"
+        if !haskey(_PMD.con(pm, nw), :branch_flow)
+            _PMD.con(pm, nw)[:branch_flow] = Dict{Int,Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        constraint_mc_branch_flow_damaged(pm, nw, f_idx, t_idx, branch["f_connections"], branch["t_connections"])
+    else
+        if !haskey(_PMD.con(pm, nw), :ohms_yt_to)
+            _PMD.con(pm, nw)[:ohms_yt] = Dict{Tuple{Int,Int,Int},Vector{Vector{<:JuMP.ConstraintRef}}}()
+        end
+        G, B = _PMD.calc_branch_y(branch)
+        constraint_mc_ohms_yt_to_ne(pm, nw, f_bus, t_bus, f_idx, t_idx, branch["f_connections"], branch["t_connections"], G, B, branch["g_to"], branch["b_to"], vad_min, vad_max)
+    end
+end
+
+
+
+
+
 #function constraint_mc_vm_vuf(pm::_PMs.AbstractPowerModel, bus_id::Int; nw::Int=pm.cnw)
 #    bus = _PMs.ref(pm, nw, :bus_bal)[bus_id]
 #    vufmax = _PMs.ref(pm, nw, :bus)[bus]["vm_vuf_max"]

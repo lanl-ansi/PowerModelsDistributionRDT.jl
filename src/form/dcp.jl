@@ -54,3 +54,68 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedDCPModel
         sol(pm, nw, :bus, i)[:lam_kcl_r] = cstr_p
     end
 end
+
+
+### DC Power Flow Approximation ###
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form)
+
+```
+p[f_idx] == -b*(t[f_bus] - t[t_bus]) * he
+```
+"""
+function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedDCPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    p_fr  = _PMD.var(pm, nw,  :p, f_idx)
+    va_fr = _PMD.var(pm, nw, :va, f_bus)
+    va_to = _PMD.var(pm, nw, :va, t_bus)
+    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+
+    ohms_yt_p = JuMP.ConstraintRef[]
+    for (idx, (fc,tc)) in enumerate(zip(f_connections, t_connections))
+        push!(ohms_yt_p, JuMP.@constraint(pm.model, p_fr[fc] <= -sum(B[idx,jdx]*(va_fr[fc] - va_to[td] + vad_max[fd]*(1-he_s)) for (jdx, (fd,td)) in enumerate(zip(f_connections, t_connections)))))
+        push!(ohms_yt_p, JuMP.@constraint(pm.model, p_fr[fc] >= -sum(B[idx,jdx]*(va_fr[fc] - va_to[td] + vad_min[fd]*(1-he_s)) for (jdx, (fd,td)) in enumerate(zip(f_connections, t_connections)))))
+    end
+    _PMD.con(pm, nw, :ohms_yt)[f_idx] = [ohms_yt_p]
+end
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for damaged lines
+
+"""
+function constraint_mc_ohms_yt_to_damaged(pm::_PMD.AbstractUnbalancedDCPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix, B::Matrix, G_to::Matrix, B_to::Matrix, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    constraint_mc_ohms_yt_from_damaged(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
+end
+
+
+
+### DC Power Flow Approximation ###
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for ne lines
+
+```
+p[f_idx] == -b*(t[f_bus] - t[t_bus]) * he
+```
+"""
+function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedDCPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    p_fr  = _PMD.var(pm, nw,  :p, f_idx)
+    va_fr = _PMD.var(pm, nw, :va, f_bus)
+    va_to = _PMD.var(pm, nw, :va, t_bus)
+    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+
+    ohms_yt_p = JuMP.ConstraintRef[]
+    for (idx, (fc,tc)) in enumerate(zip(f_connections, t_connections))
+        push!(ohms_yt_p, JuMP.@constraint(pm.model, p_fr[fc] <= -sum(B[idx,jdx]*(va_fr[fc] - va_to[td] + vad_max[fd]*(1-he_s)) for (jdx, (fd,td)) in enumerate(zip(f_connections, t_connections)))))
+        push!(ohms_yt_p, JuMP.@constraint(pm.model, p_fr[fc] >= -sum(B[idx,jdx]*(va_fr[fc] - va_to[td] + vad_min[fd]*(1-he_s)) for (jdx, (fd,td)) in enumerate(zip(f_connections, t_connections)))))
+    end
+    _PMD.con(pm, nw, :ohms_yt)[f_idx] = [ohms_yt_p]
+end
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for damaged lines
+
+"""
+function constraint_mc_ohms_yt_to_damaged(pm::_PMD.AbstractUnbalancedDCPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix, B::Matrix, G_to::Matrix, B_to::Matrix, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    constraint_mc_ohms_yt_from_damaged(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
+end

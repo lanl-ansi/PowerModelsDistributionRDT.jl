@@ -235,3 +235,101 @@ function constraint_mc_voltage_angle_difference_ne(pm::_PMD.AbstractUnbalancedAC
         JuMP.@constraint(pm.model, xe_s * (vi_fr[fc] * vr_to[tc] .- vr_fr[fc] * vi_to[tc]) >= xe_s * tan(angmin[idx]) * (vr_fr[fc] * vr_to[tc] .+ vi_fr[fc] * vi_to[tc]))
     end
 end
+
+"""
+Creates Ohms constraints for damaged lines
+
+s_fr = he * v_fr.*conj(Y*(v_fr-v_to))
+s_fr = he * (vr_fr+im*vi_fr).*(G-im*B)*([vr_fr-vr_to]-im*[vi_fr-vi_to])
+s_fr = he * (vr_fr+im*vi_fr).*([G*vr_fr-G*vr_to-B*vi_fr+B*vi_to]-im*[G*vi_fr-G*vi_to+B*vr_fr-B*vr_to])
+"""
+function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    p_fr  = [var(pm, nw, :p, f_idx)[t] for t in f_connections]
+    q_fr  = [var(pm, nw, :q, f_idx)[t] for t in f_connections]
+    vr_fr = [var(pm, nw, :vr, f_bus)[t] for t in f_connections]
+    vr_to = [var(pm, nw, :vr, t_bus)[t] for t in t_connections]
+    vi_fr = [var(pm, nw, :vi, f_bus)[t] for t in f_connections]
+    vi_to = [var(pm, nw, :vi, t_bus)[t] for t in t_connections]
+    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+
+    con(pm, nw, :ohms_yt)[f_idx] = [
+        JuMP.@constraint(pm.model,
+            p_fr .==  he_s * (vr_fr.*(G*vr_fr-G*vr_to-B*vi_fr+B*vi_to)
+                     +vi_fr.*(G*vi_fr-G*vi_to+B*vr_fr-B*vr_to)
+                     # shunt
+                     +vr_fr.*(G_fr*vr_fr-B_fr*vi_fr)
+                     +vi_fr.*(G_fr*vi_fr+B_fr*vr_fr))
+        ),
+        JuMP.@constraint(pm.model,
+            q_fr .== he_s * (-vr_fr.*(G*vi_fr-G*vi_to+B*vr_fr-B*vr_to)
+                     +vi_fr.*(G*vr_fr-G*vr_to-B*vi_fr+B*vi_to)
+                     # shunt
+                     -vr_fr.*(G_fr*vi_fr+B_fr*vr_fr)
+                     +vi_fr.*(G_fr*vr_fr-B_fr*vi_fr))
+        )
+    ]
+end
+
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for damaged lines
+
+```
+p[t_idx] ==  he * (g+g_to)*v[t_bus]^2 + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[t_bus]-t[f_bus])) + (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+q[t_idx] == he * -(b+b_to)*v[t_bus]^2 - (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[f_bus]-t[t_bus])) + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+```
+"""
+function constraint_mc_ohms_yt_to_damaged(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix, B::Matrix, G_to::Matrix, B_to::Matrix, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    constraint_mc_ohms_yt_from_damaged(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
+end
+
+
+
+
+
+"""
+Creates Ohms constraints for ne lines
+
+s_fr = he * v_fr.*conj(Y*(v_fr-v_to))
+s_fr = he * (vr_fr+im*vi_fr).*(G-im*B)*([vr_fr-vr_to]-im*[vi_fr-vi_to])
+s_fr = he * (vr_fr+im*vi_fr).*([G*vr_fr-G*vr_to-B*vi_fr+B*vi_to]-im*[G*vi_fr-G*vi_to+B*vr_fr-B*vr_to])
+"""
+function constraint_mc_ohms_yt_from_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_fr::Matrix{<:Real}, B_fr::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    p_fr  = [var(pm, nw, :p_ne, f_idx)[t] for t in f_connections]
+    q_fr  = [var(pm, nw, :q_ne, f_idx)[t] for t in f_connections]
+    vr_fr = [var(pm, nw, :vr, f_bus)[t] for t in f_connections]
+    vr_to = [var(pm, nw, :vr, t_bus)[t] for t in t_connections]
+    vi_fr = [var(pm, nw, :vi, f_bus)[t] for t in f_connections]
+    vi_to = [var(pm, nw, :vi, t_bus)[t] for t in t_connections]
+    xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
+
+    con(pm, nw, :ohms_yt)[f_idx] = [
+        JuMP.@constraint(pm.model,
+            p_fr .==  xe_s * (vr_fr.*(G*vr_fr-G*vr_to-B*vi_fr+B*vi_to)
+                     +vi_fr.*(G*vi_fr-G*vi_to+B*vr_fr-B*vr_to)
+                     # shunt
+                     +vr_fr.*(G_fr*vr_fr-B_fr*vi_fr)
+                     +vi_fr.*(G_fr*vi_fr+B_fr*vr_fr))
+        ),
+        JuMP.@constraint(pm.model,
+            q_fr .== xe_s * (-vr_fr.*(G*vi_fr-G*vi_to+B*vr_fr-B*vr_to)
+                     +vi_fr.*(G*vr_fr-G*vr_to-B*vi_fr+B*vi_to)
+                     # shunt
+                     -vr_fr.*(G_fr*vi_fr+B_fr*vr_fr)
+                     +vi_fr.*(G_fr*vr_fr-B_fr*vi_fr))
+        )
+    ]
+end
+
+
+"""
+Creates Ohms constraints (yt post fix indicates that Y and T values are in rectangular form) for damaged lines
+
+```
+p[t_idx] ==  he * (g+g_to)*v[t_bus]^2 + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[t_bus]-t[f_bus])) + (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+q[t_idx] == he * -(b+b_to)*v[t_bus]^2 - (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[f_bus]-t[t_bus])) + (-g*tr-b*ti)/tm*(v[t_bus]*v[f_bus]*sin(t[t_bus]-t[f_bus]))
+```
+"""
+function constraint_mc_ohms_yt_to_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix, B::Matrix, G_to::Matrix, B_to::Matrix, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
+    constraint_mc_ohms_yt_from_ne(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
+end
