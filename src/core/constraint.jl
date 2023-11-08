@@ -346,3 +346,42 @@ end
 #    ye = _PMs.var(pm, nw, :ye_s, arcs)
 #    JuMP.@constraint(pm.model, z <= ye)
 #end
+
+
+"on/off constraint for ne generators"
+function constraint_mc_gen_power_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, i::Int, connections::Vector{<:Int}, pmin::Vector{<:Real}, pmax::Vector{<:Real}, qmin::Vector{<:Real}, qmax::Vector{<:Real})
+    pg = _PMD.var(pm, nw, :pg_ne, i)
+    qg = _PMD.var(pm, nw, :qg_ne, i)
+    z = _PMD.var(pm, nw, :z_gen_ne, i)
+    u = _PMD.var(pm, nw, :ue_s, i)
+
+    mc = JuMP.@variable(pm.model,
+            lower_bound = 0,
+            upper_bound = 1
+         )
+
+    _IM.relaxation_product(pm.model, z, u, mc)
+
+    for (idx, c) in enumerate(connections)
+        if isfinite(pmax[idx])
+            JuMP.@constraint(pm.model, pg[c] .<= pmax[idx].*mc)
+#            JuMP.@constraint(pm.model, pg[c] .<= pmax[idx].*u)
+        end
+
+        if isfinite(pmin[idx])
+            JuMP.@constraint(pm.model, pg[c] .>= pmin[idx].*mc)
+#            JuMP.@constraint(pm.model, pg[c] .>= pmin[idx].*u)
+        end
+
+        if isfinite(qmax[idx])
+            JuMP.@constraint(pm.model, qg[c] .<= qmax[idx].*mc)
+#            JuMP.@constraint(pm.model, qg[c] .<= qmax[idx].*z)
+        end
+
+        if isfinite(qmin[idx])
+            JuMP.@constraint(pm.model, qg[c] .>= qmin[idx].*mc)
+#            JuMP.@constraint(pm.model, qg[c] .>= qmin[idx].*u)
+        end
+    end
+    nothing
+end

@@ -455,6 +455,24 @@ function constraint_mc_ohms_yt_to_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::I
 end
 
 
+"""
+    constraint_mc_gen_power_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for ne generator power on/off constraints (MLD problems)
+"""
+function constraint_mc_gen_power_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    gen = _PMD.ref(pm, nw, :gen_ne, i)
+    ncnds = length(gen["connections"])
+
+    pmin = get(gen, "pmin", fill(-Inf, ncnds))
+    pmax = get(gen, "pmax", fill( Inf, ncnds))
+    qmin = get(gen, "qmin", fill(-Inf, ncnds))
+    qmax = get(gen, "qmax", fill( Inf, ncnds))
+
+    constraint_mc_gen_power_ne(pm, nw, i, gen["connections"], pmin, pmax, qmin, qmax)
+    nothing
+end
+
 
 
 

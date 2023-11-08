@@ -11,21 +11,21 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 
     # TODO revisit which variables are relaxed
     for n in _IM.nw_ids(pm, _PMD.pmd_it_sym)
-        _PMD.variable_mc_bus_voltage(pm; nw=n) # constraint 2e
-        _PMD.variable_mc_branch_power(pm; nw=n);
-         variable_mc_branch_ne_power(pm; nw=n);
-        _PMD.variable_mc_transformer_power(pm; nw=n);
-        variable_mc_transformer_ne_power(pm; nw=n)
-        _PMD.variable_mc_switch_power(pm;nw=n)
-        variable_mc_switch_inline_ne_power(pm;nw=n)
-        _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true);
-        variable_mc_gen_ne_indicator(pm; nw=n, relax=true);
-        _PMD.variable_mc_generator_power_on_off(pm; nw=n);
-        variable_mc_generator_ne_power_on_off(pm; nw=n);
-        _PMD.variable_mc_load_indicator(pm; nw=n, relax=true);
-        _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true);
-        _PMD.variable_mc_storage_indicator(pm; nw=n, relax=true)
-        _PMD.variable_mc_storage_power_mi_on_off(pm; nw=n, relax=true)
+        _PMD.variable_mc_bus_voltage(pm; nw=n) # constraint 2e, V variables
+        _PMD.variable_mc_branch_power(pm; nw=n); # p_e, q_e variables
+         variable_mc_branch_ne_power(pm; nw=n); # p_e, q_e variables
+        _PMD.variable_mc_transformer_power(pm; nw=n); # p_e, q_e variables
+        variable_mc_transformer_ne_power(pm; nw=n) # p_e, q_e variables
+        _PMD.variable_mc_switch_power(pm;nw=n) # p_e, q_e variables
+        variable_mc_switch_inline_ne_power(pm;nw=n) # p_e, q_e variables
+        _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true); # status variable for generators (z)
+        variable_mc_gen_ne_indicator(pm; nw=n, relax=true);  # status variable for generators (z)
+        _PMD.variable_mc_generator_power_on_off(pm; nw=n); # pg, qg variables for generators
+        variable_mc_generator_ne_power_on_off(pm; nw=n);  # pg, qg variables for generators
+        _PMD.variable_mc_load_indicator(pm; nw=n, relax=true); # status variables for loads (z), creates pd and qd expressions as representative of those variables
+        _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true); # status variables for shunts (z)
+        _PMD.variable_mc_storage_indicator(pm; nw=n, relax=true) # status variables for storage (z)
+        _PMD.variable_mc_storage_power_mi_on_off(pm; nw=n, relax=true) # all the variables associated with storage power/current - that can be forced to 0 with the stoage indicator variable
 
 #        variable_branch_be(pm) # b_e variables
 
@@ -58,19 +58,12 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 
         _PMD.constraint_mc_model_voltage(pm; nw=n);   # Some forms of the power flow equations have special constraints to link voltages together.  Most power flow models don't use this
 
-
-        #for i in ids(pm, :bus)
-            #_PMD.constraint_mc_power_balance(pm, i; nw=n)
-        #end
-
         for i in _PMD.ids(pm, n, :ref_buses)
             _PMD.constraint_mc_theta_ref(pm, i; nw=n) # slack bus constraint
         end
 
-#        _PMD.constraint_mc_bus_voltage_on_off(pm; nw=n) # allow voltages to go to zero if the bus is turned off.  Not in the paper but the analgoue of constraint (2e)
-
         for i in _PMD.ids(pm, n, :gen)
-#            _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n)
+            _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n) # constraint 4a
         end
 
         for id in _PMD.ids(pm, n, :load)
@@ -78,7 +71,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
 
         for i in _PMD.ids(pm, n, :gen_ne)
-        #  some stuff
+            constraint_mc_gen_power_ne(pm, i; nw=n) # constraint 4a for new generators
         end
 
         for i in _PMD.ids(pm, n, :bus)
