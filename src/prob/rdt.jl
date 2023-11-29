@@ -22,7 +22,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         variable_mc_gen_ne_indicator(pm; nw=n, relax=true);  # status variable for generators (z)
         _PMD.variable_mc_generator_power_on_off(pm; nw=n); # pg, qg variables for generators
         variable_mc_generator_ne_power_on_off(pm; nw=n);  # pg, qg variables for generators
-        _PMD.variable_mc_load_indicator(pm; nw=n, relax=true); # status variables for loads (z), creates pd and qd expressions as representative of those variables
+        _PMD.variable_mc_load_indicator(pm; nw=n, relax=true); # status variables for loads (z), creates pd and qd expressions as representative of those variables that model constraint 4b
         _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true); # status variables for shunts (z)
         _PMD.variable_mc_storage_indicator(pm; nw=n, relax=true) # status variables for storage (z)
         _PMD.variable_mc_storage_power_mi_on_off(pm; nw=n, relax=true) # all the variables associated with storage power/current - that can be forced to 0 with the stoage indicator variable
@@ -33,7 +33,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 #         variable_ze_s(pm; nw=n) # z_e variables - may not need because switches are distinct objects now
          variable_he_s(pm; nw=n, relax=true) # h_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
          variable_ue_s(pm; nw=n, relax=true) # u_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
-         _PMD.variable_mc_switch_state(pm; nw=n) # t_e variables
+         _PMONM.variable_switch_state(pm; nw=n) # t_e variables
          variable_mc_switch_inline_ne_state(pm; nw=n) # t_e variables
 #        variable_ye_s(pm; nw=n) # # y_e variables
 
@@ -64,10 +64,6 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 
         for i in _PMD.ids(pm, n, :gen)
             _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n) # constraint 4a
-        end
-
-        for id in _PMD.ids(pm, n, :load)
-#            constraint_mc_load_power(pm, id)
         end
 
         for i in _PMD.ids(pm, n, :gen_ne)
@@ -105,7 +101,6 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             constraint_mc_ampacity_from_damaged(pm, i; nw=n) # not in paper, but fine to include
             constraint_mc_ampacity_to_damaged(pm, i; nw=n) # not in paper, but fine to include
 
-
             # constraint 2b is implict
         end
 
@@ -122,35 +117,25 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             constraint_mc_ampacity_to_ne(pm, i; nw=n) # not in paper, but fine to include
 
             # constraint 2b is implict
-
-            ### some stuff
         end
 
         for i in _PMD.ids(pm, n, :transformer)
             _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
         end
 
-#        for i in _PMs.ids(pm, :arcs_bal)
-#            constraint_branch_be(pm, i); # constraint 2f & 2g
-#            constraint_balance_flow(pm, i); # constraint 3a & 3b
-#        end
-
         constraint_critical_load(pm; nw=n) # constraint 4c
-        constraint_total_load(pm; nw=n) # anaologue to constraint 4c
-
-        # cycle elimination constraints
-#        for tour in _PMs.ids(pm, :arc_tour)
-#            constraint_cycle_elimination(pm, n, tour)
-#        end
+        constraint_total_load(pm; nw=n) # anaologue to constraint 4d
 
         for i in _PMD.ids(pm, n, :switch)
-            _PMD.constraint_mc_switch_state(pm, i; nw=n)
+            _PMONM.constraint_mc_switch_state_open_close(pm, i; nw=n)
             _PMD.constraint_mc_switch_thermal_limit(pm, i; nw=n)
             _PMD.constraint_mc_switch_ampacity(pm, i; nw=n)
         end
 
         for i in _PMD.ids(pm, n, :switch_inline_ne)
-            ### some stuff
+#            constraint_mc_switch_state_open_close_ne(pm, i; nw=n)
+#            constraint_mc_switch_thermal_limit_ne(pm, i; nw=n)
+#            constraint_mc_switch_ampacity_ne(pm, i; nw=n)
         end
 
 
@@ -162,11 +147,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             _PMD.constraint_mc_storage_thermal_limit(pm, i; nw=n)
         end
 
-        #            constraint_cycle_function(pm, i; nw=n)
+        constraint_radial_topology_ne(pm; nw=n)
 
     end
-
-
 
     objective_rdt(pm)
 end

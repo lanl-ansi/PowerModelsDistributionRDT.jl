@@ -474,6 +474,15 @@ function constraint_mc_gen_power_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::In
 end
 
 
+""""
+    constraint_radial_topology(pm::AbstractUnbalancedPowerModel; nw::Int=nw_id_default, relax::Bool=false)
+
+Template function radial topology constraint with expansion edges.
+"""
+function constraint_radial_topology_ne(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, relax::Bool=false)
+    constraint_radial_topology_ne(pm, nw; relax=relax)
+end
+
 
 
 #function constraint_mc_vm_vuf(pm::_PMs.AbstractPowerModel, bus_id::Int; nw::Int=pm.cnw)
@@ -645,3 +654,5 @@ end
 
 #    constraint_cycle_elimination(pm, nw::Int, tours)
 #end
+
+# Switch constraints

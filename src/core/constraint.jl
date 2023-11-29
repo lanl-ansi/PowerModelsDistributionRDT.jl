@@ -365,23 +365,155 @@ function constraint_mc_gen_power_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::I
     for (idx, c) in enumerate(connections)
         if isfinite(pmax[idx])
             JuMP.@constraint(pm.model, pg[c] .<= pmax[idx].*mc)
-#            JuMP.@constraint(pm.model, pg[c] .<= pmax[idx].*u)
         end
 
         if isfinite(pmin[idx])
             JuMP.@constraint(pm.model, pg[c] .>= pmin[idx].*mc)
-#            JuMP.@constraint(pm.model, pg[c] .>= pmin[idx].*u)
         end
 
         if isfinite(qmax[idx])
             JuMP.@constraint(pm.model, qg[c] .<= qmax[idx].*mc)
-#            JuMP.@constraint(pm.model, qg[c] .<= qmax[idx].*z)
         end
 
         if isfinite(qmin[idx])
             JuMP.@constraint(pm.model, qg[c] .>= qmin[idx].*mc)
-#            JuMP.@constraint(pm.model, qg[c] .>= qmin[idx].*u)
         end
     end
     nothing
+end
+
+
+@doc raw"""
+    constraint_radial_topology_ne(pm::AbstractUnbalancedPowerModel, nw::Int; relax::Bool=false)
+
+Constraint to enforce a radial topology
+
+See 10.1109/TSG.2020.2985087
+
+```math
+\begin{align}
+\mathbf{\beta} \in \mathbf{\Omega} \\
+\alpha_{ij} \leq \beta_{ij},\forall(i,j) \in L \\
+\sum_{\substack{(j,i_r)\in L}}f^{k}_{ji_r} - \sum_{\substack{(i_r,j)\in L}}f^{k}_{i_rj}=-1,~\forall k \in N\setminus i_r \\
+\sum_{\substack{(j,k)\in L}}f^{k}_{jk} - \sum_{\substack{(k,j)\in L}}f^k_{kj} = 1,~\forall k \in N\setminus i_r \\
+\sum_{\substack{(j,i)\in L}}f^k_{ji}-\sum_{\substack{(i,j)\in L}}f^k_{ij}=0,~\forall k \in N\setminus i_r,\forall i \in N\setminus {i_r,k} \\
+0 \leq f^k_{ij} \leq \lambda_{ij},0 \leq f^k_{ji} \leq \lambda_{ji},\forall k \in N\setminus i_r,\forall(i,j)\in L \\
+\sum_{\substack{(i,j)\in L}}\left(\lambda_{ij} + \lambda_{ji} \right ) = \left | N \right | - 1 \\
+\lambda_{ij} + \lambda_{ji} = \beta_{ij},\forall(i,j)\in L \\
+\lambda_{ij},\lambda_{ji}\in\left \{ 0,1 \right \},\forall(i,j)\in L
+\end{align}
+```
+"""
+function constraint_radial_topology_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int; relax::Bool=false)
+    # doi: 10.1109/TSG.2020.2985087
+    _PMD.var(pm, nw)[:f] = Dict{Tuple{Int,Int,Int},JuMP.VariableRef}()
+    _PMD.var(pm, nw)[:lambda] = Dict{Tuple{Int,Int},JuMP.VariableRef}()
+    _PMD.var(pm, nw)[:beta] = Dict{Tuple{Int,Int},JuMP.VariableRef}()
+    _PMD.var(pm, nw)[:alpha] = Dict{Tuple{Int,Int},Union{JuMP.VariableRef,JuMP.AffExpr,Int}}()
+
+    # "real" node and branch sets, based on load blocks
+    N₀ = _PMD.ids(pm, nw, :blocks)
+    L₀ = _PMD.ref(pm, nw, :block_pairs)
+
+    # Add "virtual" iᵣ to N
+    virtual_iᵣ = maximum(N₀)+1
+    N = [N₀..., virtual_iᵣ]
+    iᵣ = [virtual_iᵣ]
+
+    # create a set L of all branches, including virtual branches between iᵣ and all other nodes in L₀
+    L = [L₀..., [(virtual_iᵣ, n) for n in N₀]...]
+
+    # create a set L′ that inlcudes the branch reverses
+#    L′ = union(L, Set([(j,i) for (i,j) in L]))
+
+    # create variables fᵏ and λ over all L, including virtual branches connected to iᵣ
+#    for (i,j) in L′
+#        for k in filter(kk->kk∉iᵣ,N)
+#            var(pm, nw, :f)[(k, i, j)] = JuMP.@variable(pm.model, base_name="$(nw)_f_$((k,i,j))", start=(k,i,j) == (k,virtual_iᵣ,k) ? 1 : 0)
+#        end
+#        var(pm, nw, :lambda)[(i,j)] = JuMP.@variable(pm.model, base_name="$(nw)_lambda_$((i,j))", binary=!relax, lower_bound=0, upper_bound=1, start=(i,j) == (virtual_iᵣ,j) ? 1 : 0)
+
+        # create variable β over only original set L₀
+#        if (i,j) ∈ L₀
+#            var(pm, nw, :beta)[(i,j)] = JuMP.@variable(pm.model, base_name="$(nw)_beta_$((i,j))", lower_bound=0, upper_bound=1)
+#        end
+#    end
+
+    # create an aux varible α that maps to the switch states
+#    switch_lookup = Dict{Tuple{Int,Int},Vector{Int}}((ref(pm, nw, :bus_block_map, sw["f_bus"]), ref(pm, nw, :bus_block_map, sw["t_bus"])) => Int[ss for (ss,ssw) in ref(pm, nw, :switch) if (ref(pm, nw, :bus_block_map, sw["f_bus"])==ref(pm, nw, :bus_block_map, ssw["f_bus"]) && ref(pm, nw, :bus_block_map, sw["t_bus"])==ref(pm, nw, :bus_block_map, ssw["t_bus"])) || (ref(pm, nw, :bus_block_map, sw["f_bus"])==ref(pm, nw, :bus_block_map, ssw["t_bus"]) && ref(pm, nw, :bus_block_map, sw["t_bus"])==ref(pm, nw, :bus_block_map, ssw["f_bus"]))] for (s,sw) in ref(pm, nw, :switch))
+#    for ((i,j), switches) in switch_lookup
+#        var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, sum(var(pm, nw, :switch_state, s) for s in switches))
+#        JuMP.@constraint(pm.model, var(pm, nw, :alpha, (i,j)) <= 1)
+#    end
+
+#    f = var(pm, nw, :f)
+#    λ = var(pm, nw, :lambda)
+#    β = var(pm, nw, :beta)
+#    α = var(pm, nw, :alpha)
+
+    # Eq. (1) -> Eqs. (3-8)
+#    for k in filter(kk->kk∉iᵣ,N)
+#        # Eq. (3)
+#        for _iᵣ in iᵣ
+#            jiᵣ = filter(((j,i),)->i==_iᵣ&&i!=j,L)
+#            iᵣj = filter(((i,j),)->i==_iᵣ&&i!=j,L)
+#            if !(isempty(jiᵣ) && isempty(iᵣj))
+#                c = JuMP.@constraint(
+#                    pm.model,
+#                    sum(f[(k,j,i)] for (j,i) in jiᵣ) -
+#                    sum(f[(k,i,j)] for (i,j) in iᵣj)
+#                    ==
+#                    -1.0
+#                )
+#            end
+#        end
+
+        # Eq. (4)
+#        jk = filter(((j,i),)->i==k&&i!=j,L′)
+#        kj = filter(((i,j),)->i==k&&i!=j,L′)
+#        if !(isempty(jk) && isempty(kj))
+#            c = JuMP.@constraint(
+#                pm.model,
+#                sum(f[(k,j,k)] for (j,i) in jk) -
+#                sum(f[(k,k,j)] for (i,j) in kj)
+#                ==
+#                1.0
+#            )
+#        end
+
+        # Eq. (5)
+#        for i in filter(kk->kk∉iᵣ&&kk!=k,N)
+#            ji = filter(((j,ii),)->ii==i&&ii!=j,L′)
+#            ij = filter(((ii,j),)->ii==i&&ii!=j,L′)
+#            if !(isempty(ji) && isempty(ij))
+#                c = JuMP.@constraint(
+#                    pm.model,
+#                    sum(f[(k,j,i)] for (j,ii) in ji) -
+#                    sum(f[(k,i,j)] for (ii,j) in ij)
+#                    ==
+#                    0.0
+#                )
+#            end
+#        end
+
+        # Eq. (6)
+#        for (i,j) in L
+#            JuMP.@constraint(pm.model, f[(k,i,j)] >= 0)
+#            JuMP.@constraint(pm.model, f[(k,i,j)] <= λ[(i,j)])
+#            JuMP.@constraint(pm.model, f[(k,j,i)] >= 0)
+#            JuMP.@constraint(pm.model, f[(k,j,i)] <= λ[(j,i)])
+#        end
+#    end
+
+    # Eq. (7)
+#    JuMP.@constraint(pm.model, sum((λ[(i,j)] + λ[(j,i)]) for (i,j) in L) == length(N) - 1)
+
+    # Connect λ and β, map β back to α, over only real switches (L₀)
+#    for (i,j) in L₀
+        # Eq. (8)
+#        JuMP.@constraint(pm.model, λ[(i,j)] + λ[(j,i)] == β[(i,j)])
+
+        # Eq. (2)
+#        JuMP.@constraint(pm.model, α[(i,j)] <= β[(i,j)])
+#    end
 end

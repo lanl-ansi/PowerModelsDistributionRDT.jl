@@ -63,7 +63,7 @@ function create_inline_switch!(data_math::Dict{String,Any}, data_eng::Dict{Strin
     # information about the switch
     switch_info["name"]          = switch_id
     switch_info["index"]         = parse(Int64,branch_id)
-    switch_info["status"]        = _PMD.ENABLED
+    switch_info["status"]        = 1
     switch_info["f_bus"]         = virtual_bus_id
     switch_info["t_bus"]         = branch["t_bus"]
     switch_info["f_connections"] = deepcopy(branch["f_connections"])
@@ -71,8 +71,8 @@ function create_inline_switch!(data_math::Dict{String,Any}, data_eng::Dict{Strin
     switch_info["rate_a"]        = branch["rate_a"]
     switch_info["rate_b"]        = branch["rate_b"]
     switch_info["rate_c"]        = branch["rate_c"]
-    switch_info["dispatchable"]  = _PMD.YES
-    switch_info["state"]         = _PMD.CLOSED
+    switch_info["dispatchable"]  = Int(_PMD.YES)
+    switch_info["state"]         = Int(_PMD.CLOSED)
     switch_info["switch_branch"] = branch_id
 
     # final updates to everything
@@ -114,7 +114,7 @@ function transform_switch_inline_ne!(data_math::Dict{String,Any}, data_eng::Dict
             # information about the switch
             switch_info["name"]          = switch_id
             switch_info["index"]         = parse(Int64,i)
-            switch_info["status"]        = _PMD.ENABLED
+            switch_info["status"]        = 1
             switch_info["f_bus"]         = virtual_bus_id
             switch_info["t_bus"]         = branch["t_bus"]
             switch_info["f_connections"] = deepcopy(branch["f_connections"])
@@ -122,8 +122,8 @@ function transform_switch_inline_ne!(data_math::Dict{String,Any}, data_eng::Dict
             switch_info["rate_a"]        = branch["rate_a"]
             switch_info["rate_b"]        = branch["rate_b"]
             switch_info["rate_c"]        = branch["rate_c"]
-            switch_info["dispatchable"]  = _PMD.YES
-            switch_info["state"]         = _PMD.CLOSED
+            switch_info["dispatchable"]  = Int(_PMD.YES)
+            switch_info["state"]         = Int(_PMD.CLOSED)
             switch_info["switch_cost"]   = branch["switch_cost"]
             switch_info["switch_branch"] = i
 

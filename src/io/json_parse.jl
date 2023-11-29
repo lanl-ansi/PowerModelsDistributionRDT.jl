@@ -140,7 +140,7 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         info["name"] = branch["id"]
         info["index"] = i
         lookups[:branch_names][branch["id"]] = i
-        info["source_id"] = ["branch", i]
+        info["source_id"] = branch["id"]
         info["br_status"] = 1
 
         # transformer or not
@@ -228,7 +228,7 @@ function json2pm_gen!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
         info["name"] = gen["id"]
         info["index"] = i
         info["gen_bus"] = lookups[:bus][gen["node_id"]]
-        info["source_id"] = ["gen", i]
+        info["source_id"] = gen["id"]
         info["gen_status"] = 1
         info["model"] = 2
 
@@ -274,7 +274,7 @@ function json2pm_bus!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
         bus_data[id]["name"] = bus["id"]
         bus_data[id]["index"] = i
         bus_data[id]["bus_i"] = lookups[:bus][bus["id"]]
-        bus_data[id]["source_id"] = ["bus", i]
+        bus_data[id]["source_id"] = bus["id"]
         bus_data[id]["bus_type"] = lookups[:type][bus["id"]]
 
         # active phases
@@ -325,7 +325,7 @@ function json2pm_load!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookup
         load_data[id]["name"] = load["id"]
         load_data[id]["index"] = i
         load_data[id]["load_bus"] = lookups[:bus][load["node_id"]]
-        load_data[id]["source_id"] = ["bus", i]
+        load_data[id]["source_id"] = load["id"]
         load_data[id]["status"] = 1
 
         # active phases
