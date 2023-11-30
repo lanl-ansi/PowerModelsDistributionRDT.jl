@@ -37,6 +37,8 @@ module PowerModelsDistributionRDT
     include("form/shared.jl")
     include("form/acr.jl")
     include("form/acp.jl")
+    include("form/lindistflow.jl")
+
 
     include("core/export.jl")  # must be last include to properly export functions
 end # module

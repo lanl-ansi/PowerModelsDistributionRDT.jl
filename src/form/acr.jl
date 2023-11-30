@@ -330,3 +330,46 @@ q[t_idx] == he * -(b+b_to)*v[t_bus]^2 - (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*cos(t
 function constraint_mc_ohms_yt_to_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix, B::Matrix, G_to::Matrix, B_to::Matrix, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
     constraint_mc_ohms_yt_from_ne(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
 end
+
+
+@doc raw"""
+    constraint_mc_switch_voltage_open_close(pm::PMD.AbstractUnbalancedACRModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+
+nonlinear switch power on/off constraint for ac-rect form
+
+```math
+\begin{align}
+& \\
+&
+\end{align}
+```
+"""
+function constraint_mc_switch_voltage_open_close_inline_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+    vr_fr = _PMD.var(pm, nw, :vr, f_bus)
+    vr_to = _PMD.var(pm, nw, :vr, t_bus)
+    vi_fr = _PMD.var(pm, nw, :vi, f_bus)
+    vi_to = _PMD.var(pm, nw, :vi, t_bus)
+
+    f_bus = _PMD.ref(pm, nw, :bus, f_bus)
+    t_bus = _PMD.ref(pm, nw, :bus, t_bus)
+
+    f_vmin = f_bus["vmin"][[findfirst(isequal(c), f_bus["terminals"]) for c in f_connections]]
+    t_vmin = t_bus["vmin"][[findfirst(isequal(c), t_bus["terminals"]) for c in t_connections]]
+
+    f_vmax = f_bus["vmax"][[findfirst(isequal(c), f_bus["terminals"]) for c in f_connections]]
+    t_vmax = t_bus["vmax"][[findfirst(isequal(c), t_bus["terminals"]) for c in t_connections]]
+
+    vmin = max.(fill(0.0, length(f_vmax)), f_vmin, t_vmin)
+    vmax = min.(fill(2.0, length(f_vmax)), f_vmax, t_vmax)
+
+    state = _PMD.var(pm, nw, :switch_inline_ne_state, i)
+
+    for (idx, (fc, tc)) in enumerate(zip(f_connections, t_connections))
+        JuMP.@NLconstraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) <=  (vmax[idx]^2-vmin[idx]^2) * (1-state))
+        JuMP.@NLconstraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) >= -(vmax[idx]^2-vmin[idx]^2) * (1-state))
+
+        # Indicator constraint version, for reference
+        # JuMP.@constraint(pm.model, state => {vr_fr[fc] == vr_to[tc]})
+        # JuMP.@constraint(pm.model, state => {vi_fr[fc] == vi_to[tc]})
+    end
+end

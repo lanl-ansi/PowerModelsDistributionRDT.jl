@@ -656,3 +656,21 @@ end
 #end
 
 # Switch constraints
+
+"""
+    constraint_mc_switch_state_open_close_inline_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+
+
+"""
+function constraint_mc_switch_state_open_close_inline_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+    switch = _PMD.ref(pm, nw, :switch_inline_ne, i)
+
+    f_bus = switch["f_bus"]
+    t_bus = switch["t_bus"]
+
+    f_connections = switch["f_connections"]
+    t_connections = switch["t_connections"]
+
+    constraint_mc_switch_voltage_open_close_inline_ne(pm, nw, i, f_bus, t_bus, f_connections, t_connections)
+#    constraint_mc_switch_power_open_close_inline_ne(pm, nw, i, f_bus, t_bus, f_connections, t_connections)
+end

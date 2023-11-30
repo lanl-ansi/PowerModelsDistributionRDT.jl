@@ -13,6 +13,10 @@ function constraint_xe(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::
     JuMP.@constraint(pm.model, xe == xe_s)
 end
 
+"""
+    Adding an inline switch to existing line is modeled by adding the switch explcitly as a seperate sequential edge that is a lossless closed edge when the switch is not built
+    This constraint forces the open state when this happens
+"""
 function constraint_te(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, base_nw::Int, switch::Int)
     te = _PMD.var(pm, base_nw, :te, switch)
     te_s = _PMD.var(pm, nw, :switch_inline_ne_state, switch)
@@ -103,80 +107,6 @@ function constraint_mc_thermal_limit_to_ne(pm::_PMD.AbstractUnbalancedPowerModel
     nothing
 end
 
-
-
-
-#function constraint_branch_be_p(pm::_PMs.AbstractPowerModel, nw::Int, arcs, trans) # check trans arcs and branch arches
-#    be = _PMs.var(pm, nw, :be_p, (arcs))
-#    for cnd in _PMs.conductor_ids(pm)
-#        if trans
-#            haskey(_PMs.ref(pm, nw, :transformer, arcs[1]), "rate_a") ? t = _PMs.ref(pm, nw, :transformer, arcs[1], "rate_a")[cnd] : t = 1
-#            p = _PMs.var(pm, nw, :pt, (arcs))[cnd]
-#        else
-#            haskey(_PMs.ref(pm, nw, :branch, arcs[1]), "rate_a") ? t = _PMs.ref(pm, nw, :transformer, arcs[1], "rate_a")[cnd] : t = 1
-#            p = _PMs.var(pm, nw, :p, (arcs))[cnd]
-#        end
-#        JuMP.@constraint(pm.model, p <= t * (1 - be))
-#        JuMP.@constraint(pm.model, p >= -t * be)
-#    end
-#end
-
-#function constraint_branch_be_q(pm::_PMs.AbstractPowerModel, nw::Int, arcs, trans)
-#    be = _PMs.var(pm, nw, :be_q, (arcs))
-#    for cnd in _PMs.conductor_ids(pm)
-#        if trans
-#            haskey(_PMs.ref(pm, nw, :transformer, arcs[1]), "rate_a") ? t = _PMs.ref(pm, nw, :transformer, arcs[1], "rate_a")[cnd] : t = 1
-#            q = _PMs.var(pm, nw, :qt, (arcs))[cnd]
-#        else
-#            haskey(_PMs.ref(pm, nw, :branch, arcs[1]), "rate_a") ? t = _PMs.ref(pm, nw, :transformer, arcs[1], "rate_a")[cnd] : t = 1
-#            q = _PMs.var(pm, nw, :q, (arcs))[cnd]
-#        end
-#        JuMP.@constraint(pm.model, q <= t * (1 - be))
-#        JuMP.@constraint(pm.model, q >= -t * be)
-#    end
-#end
-
-#function constraint_balance_p_flow(pm::_PMs.AbstractPowerModel, nw::Int, arcs, trans)
-#    be = _PMs.var(pm, nw, :be_p, (arcs))
-#    if trans
-#        limit = _PMs.ref(pm, nw, :transformer, arcs[1])["pq_imbalance"]
-#        p = [ _PMs.var(pm, nw, :pt, arcs)[c] for c in _PMs.conductor_ids(pm)]
-#    else
-#        limit = _PMs.ref(pm, nw, :branch, arcs[1])["pq_imbalance"]
-#        p = [ _PMs.var(pm, nw, :p, arcs)[c] for c in _PMs.conductor_ids(pm)]
-#    end
-#    lb_beta = 1 - limit
-#    ub_beta = 1 + limit
-#    sum_p = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
-#    JuMP.@constraint(pm.model, sum(p[c] for c in _PMs.conductor_ids(pm)) == sum_p)
-#    p_be = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
-#    _IM.relaxation_product(pm.model, be, sum_p, p_be)
-#    for cnd in _PMs.conductor_ids(pm)
-#        JuMP.@constraint(pm.model, ub_beta/3 * sum(p[c] for c in _PMs.conductor_ids(pm)) + 1/3*(lb_beta - ub_beta) * p_be >= p[cnd])
-#        JuMP.@constraint(pm.model, lb_beta/3 * sum(p[c] for c in _PMs.conductor_ids(pm)) + 1/3*(ub_beta - lb_beta) * p_be <= p[cnd])
-#    end
-#end
-
-#function constraint_balance_q_flow(pm::_PMs.AbstractPowerModel, nw::Int, arcs, trans)
-#    be = _PMs.var(pm, nw, :be_q, (arcs))
-#    if trans
-#        limit = _PMs.ref(pm, nw, :transformer, arcs[1])["pq_imbalance"]
-#        q = [ _PMs.var(pm, nw, :qt, arcs)[c] for c in _PMs.conductor_ids(pm)]
-#    else
-#        limit = _PMs.ref(pm, nw, :branch, arcs[1])["pq_imbalance"]
-#        q = [ _PMs.var(pm, nw, :q, arcs)[c] for c in _PMs.conductor_ids(pm)]
-#    end
-#    lb_beta = 1 - limit
-#    ub_beta = 1 + limit
-#    sum_q = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
-#    JuMP.@constraint(pm.model, sum(q[c] for c in _PMs.conductor_ids(pm)) == sum_q)
-#    q_be = JuMP.@variable(pm.model, upper_bound = 10, lower_bound = -10, start = 0)
-#    _IM.relaxation_product(pm.model, be, sum_q, q_be)
-#    for cnd in _PMs.conductor_ids(pm)
-#        JuMP.@constraint(pm.model, ub_beta/3 * sum(q[c] for c in _PMs.conductor_ids(pm)) + 1/3*(lb_beta - ub_beta) * q_be >= q[cnd])
-#        JuMP.@constraint(pm.model, lb_beta/3 * sum(q[c] for c in _PMs.conductor_ids(pm)) + 1/3*(ub_beta - lb_beta) * q_be <= q[cnd])
-#    end
-#end
 
 function constraint_critical_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, loads::Set{Int64}, limit::Float64, total_pd::Vector{Float64}, total_qd::Vector{Float64})
     pd = _PMD.var(pm, nw, :pd)
@@ -516,4 +446,45 @@ function constraint_radial_topology_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw
         # Eq. (2)
 #        JuMP.@constraint(pm.model, α[(i,j)] <= β[(i,j)])
 #    end
+end
+
+
+@doc raw"""
+    constraint_mc_switch_power_open_close(
+        pm::AbstractUnbalancedPowerModel,
+        nw::Int,
+        i::Int,
+        f_bus::Int,
+        t_bus::Int,
+        f_connections::Vector{Int},
+        t_connections::Vector{Int}
+    )
+
+generic switch power open/closed constraint
+
+```math
+\begin{align}
+& S^{sw}_{i,c} \leq S^{swu}_{i,c} z^{sw}_i\ \forall i \in S,\forall c \in C \\
+& S^{sw}_{i,c} \geq -S^{swu}_{i,c} z^{sw}_i\ \forall i \in S,\forall c \in C
+\end{align}
+```
+"""
+function constraint_mc_switch_power_open_close_inline_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+    psw = _PMD.var(pm, nw, :psw, (i, f_bus, t_bus))
+    qsw = _PMD.var(pm, nw, :qsw, (i, f_bus, t_bus))
+
+    state = _PMD.var(pm, nw, :switch_inline_ne_state, i)
+
+    rating = min.(fill(1.0, length(f_connections)), _PMD._calc_branch_power_max_frto(ref(pm, nw, :switch, i), ref(pm, nw, :bus, f_bus), ref(pm, nw, :bus, t_bus))...)
+
+    for (idx, c) in enumerate(f_connections)
+        JuMP.@constraint(pm.model, psw[c] <=  rating[idx] * state)
+        JuMP.@constraint(pm.model, psw[c] >= -rating[idx] * state)
+        JuMP.@constraint(pm.model, qsw[c] <=  rating[idx] * state)
+        JuMP.@constraint(pm.model, qsw[c] >= -rating[idx] * state)
+
+        # Indicator constraint version, for reference
+        # JuMP.@constraint(pm.model, !state => {psw[c] == 0.0})
+        # JuMP.@constraint(pm.model, !state => {qsw[c] == 0.0})
+    end
 end

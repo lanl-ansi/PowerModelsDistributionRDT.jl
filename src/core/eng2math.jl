@@ -32,6 +32,7 @@ function transform_switch_inline!(data_math::Dict{String,Any}, data_eng::Dict{St
         end
     end
 
+    # always add a switch for each expansion branch - it will be explictly in the model, but won't do anything unless the branch is there
     for (i, branch) in data_math["branch_ne"]
         create_inline_switch!(data_math, data_eng, virtual_bus_id, unique_switch_id, i, branch)
         virtual_bus_id   = virtual_bus_id + 1

@@ -346,3 +346,54 @@ q[t_idx] == -(b+b_to)*v[t_bus]^2 - (-b*tr+g*ti)/tm*(v[t_bus]*v[f_bus]*cos(t[f_bu
 function constraint_mc_ohms_yt_to_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, f_bus::Int, t_bus::Int, f_idx::Tuple{Int,Int,Int}, t_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, G::Matrix{<:Real}, B::Matrix{<:Real}, G_to::Matrix{<:Real}, B_to::Matrix{<:Real}, vad_min::Vector{<:Real}, vad_max::Vector{<:Real})
     constraint_mc_ohms_yt_from_ne(pm, nw, t_bus, f_bus, t_idx, f_idx, t_connections, f_connections, G, B, G_to, B_to, vad_min, vad_max)
 end
+
+
+
+@doc raw"""
+    constraint_mc_switch_state_voltage_open_closed(pm::PMD.AbstractUnbalancedACPModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+
+Linear switch power on/off constraint for ACPU form.
+
+```math
+\begin{align}
+& |V^{fr}_{i,c}| - |V^{to}_{i,c}| \leq \left ( v^u_{i,c} - v^l_{i,c} \right ) \left ( 1 - z^{sw}_i \right )\ \forall i \in S,\forall c \in C \\
+& |V^{fr}_{i,c}| - |V^{to}_{i,c}| \geq -\left ( v^u_{i,c} - v^l_{i,c} \right ) \left ( 1 - z^{sw}_i \right )\ \forall i \in S,\forall c \in C \\
+
+\end{align}
+```
+"""
+function constraint_mc_switch_voltage_open_close_inline_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+    vm_fr = _PMD.var(pm, nw, :vm, f_bus)
+    vm_to = _PMD.var(pm, nw, :vm, t_bus)
+    va_fr = _PMD.var(pm, nw, :va, f_bus)
+    va_to = _PMD.var(pm, nw, :va, t_bus)
+
+    f_bus = _PMD.ref(pm, nw, :bus, f_bus)
+    t_bus = _PMD.ref(pm, nw, :bus, t_bus)
+
+    f_vmin = f_bus["vmin"][[findfirst(isequal(c), f_bus["terminals"]) for c in f_connections]]
+    t_vmin = t_bus["vmin"][[findfirst(isequal(c), t_bus["terminals"]) for c in t_connections]]
+
+    f_vmax = f_bus["vmax"][[findfirst(isequal(c), f_bus["terminals"]) for c in f_connections]]
+    t_vmax = t_bus["vmax"][[findfirst(isequal(c), t_bus["terminals"]) for c in t_connections]]
+
+    vmin = max.(fill(0.0, length(f_vmax)), f_vmin, t_vmin)
+    vmax = min.(fill(2.0, length(f_vmax)), f_vmax, t_vmax)
+
+    angmin = get(_PMD.ref(pm, nw, :switch_inline_ne, i), "angmin", deg2rad.(fill(-5.0, length(f_connections))))
+    angmax = get(_PMD.ref(pm, nw, :switch_inline_ne, i), "angmax", deg2rad.(fill( 5.0, length(f_connections))))
+
+    state = _PMD.var(pm, nw, :switch_inline_ne_state, i)
+
+    for (idx, (fc, tc)) in enumerate(zip(f_connections, t_connections))
+        JuMP.@constraint(pm.model, vm_fr[fc] - vm_to[tc] <=  (vmax[idx]-vmin[idx]) * (1-state))
+        JuMP.@constraint(pm.model, vm_fr[fc] - vm_to[tc] >= -(vmax[idx]-vmin[idx]) * (1-state))
+
+        JuMP.@constraint(pm.model, va_fr[fc] - va_to[tc] <=  (angmax[idx]-angmin[idx]) * (1-state))
+        JuMP.@constraint(pm.model, va_fr[fc] - va_to[tc] >= -(angmax[idx]-angmin[idx]) * (1-state))
+
+        # Indicator constraint version, for reference
+        # JuMP.@constraint(pm.model, state => {vm_fr[fc] == vm_to[tc]})
+        # JuMP.@constraint(pm.model, state => {va_fr[fc] == va_to[tc]})
+    end
+end
