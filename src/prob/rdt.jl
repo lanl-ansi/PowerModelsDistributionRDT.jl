@@ -133,9 +133,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         end
 
         for i in _PMD.ids(pm, n, :switch_inline_ne)
-            constraint_mc_switch_state_open_close_inline_ne(pm, i; nw=n)
-#            constraint_mc_switch_thermal_limit_ne(pm, i; nw=n)
-#            constraint_mc_switch_ampacity_ne(pm, i; nw=n)
+            constraint_mc_switch_inline_ne_state_open_close(pm, i; nw=n)
+            constraint_mc_switch_inline_ne_thermal_limit(pm, i; nw=n)
+            constraint_mc_switch_inline_ne_ampacity(pm, i; nw=n)
         end
 
 

@@ -96,8 +96,8 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedWModels,
     qs       = get(_PMD.var(pm, nw),   :qs, Dict()); _PMD._check_var_keys(qs, bus_storage, "reactive power", "storage")
     psw      = get(_PMD.var(pm, nw),   :psw, Dict()); _PMD._check_var_keys(psw, bus_arcs_sw, "active power", "switch")
     qsw      = get(_PMD.var(pm, nw),   :qsw, Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw, "reactive power", "switch")
-    psw_ne   = get(_PMD.var(pm, nw),   :psw_ne, Dict()); _PMD._check_var_keys(psw_ne, bus_arcs_sw_ne, "active power", "switch_inline_ne")
-    qsw_ne   = get(_PMD.var(pm, nw),   :qsw_ne, Dict()); _PMD._check_var_keys(qsw_ne, bus_arcs_sw_ne, "reactive power", "switch_inline_ne")
+    psw_ne   = get(_PMD.var(pm, nw),   :psw_inline_ne, Dict()); _PMD._check_var_keys(psw_ne, bus_arcs_sw_ne, "active power", "switch_inline_ne")
+    qsw_ne   = get(_PMD.var(pm, nw),   :qsw_inline_ne, Dict()); _PMD._check_var_keys(qsw_ne, bus_arcs_sw_ne, "reactive power", "switch_inline_ne")
     pt       = get(_PMD.var(pm, nw),   :pt, Dict()); _PMD._check_var_keys(pt, bus_arcs_trans, "active power", "transformer")
     qt       = get(_PMD.var(pm, nw),   :qt, Dict()); _PMD._check_var_keys(qt, bus_arcs_trans, "reactive power", "transformer")
     pt_ne    = get(_PMD.var(pm, nw),   :pt_ne, Dict()); _PMD._check_var_keys(pt_ne, bus_arcs_trans_ne, "active power", "transformer_ne")
@@ -307,4 +307,28 @@ function constraint_mc_voltage_angle_difference_ne(pm::_PMD.AbstractUnbalancedPo
     # on the lhs, and this constraint otherwise.  If we have an analytical result on the largest phase angle difference across the network, we could also make this a big-M style on-off constraint.
     JuMP.@constraint(pm.model, xe_s * (va_fr .- va_to) .<= xe_s * angmax)
     JuMP.@constraint(pm.model, xe_s * (va_fr .- va_to) .>= xe_s * angmin)
+end
+
+
+@doc raw"""
+    constraint_mc_switch_inline_ne_ampacity(pm::AbstractUnbalancedWModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on switches from-side
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq w_{fr} i_{max}^2
+```
+"""
+function constraint_mc_switch_inline_ne_ampacity(pm::_PMD.AbstractUnbalancedWModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    psw_fr = [_PMD.var(pm, nw, :psw_inline_ne, f_idx)[c] for c in f_connections]
+    qsw_fr = [_PMD.var(pm, nw, :qsw_inline_ne, f_idx)[c] for c in f_connections]
+    w_fr = [_PMD.var(pm, nw, :w, f_idx[2])[c] for c in f_connections]
+
+    _PMD.con(pm, nw, :mu_cm_switch_inline_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, psw_fr[idx]^2 + qsw_fr[idx]^2 .<= w_fr[idx] * c_rating[idx]^2) for idx in findall(c_rating .< Inf)]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :switch_inline_ne, f_idx[1])[:mu_cm_fr] = mu_cm_fr
+    end
+
+    nothing
 end

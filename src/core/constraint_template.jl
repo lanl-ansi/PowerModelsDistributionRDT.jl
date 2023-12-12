@@ -658,11 +658,11 @@ end
 # Switch constraints
 
 """
-    constraint_mc_switch_state_open_close_inline_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+    constraint_mc_switch_inline_ne_state_open_close(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
 
 
 """
-function constraint_mc_switch_state_open_close_inline_ne(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
+function constraint_mc_switch_inline_ne_state_open_close(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)
     switch = _PMD.ref(pm, nw, :switch_inline_ne, i)
 
     f_bus = switch["f_bus"]
@@ -671,6 +671,25 @@ function constraint_mc_switch_state_open_close_inline_ne(pm::_PMD.AbstractUnbala
     f_connections = switch["f_connections"]
     t_connections = switch["t_connections"]
 
-    constraint_mc_switch_voltage_open_close_inline_ne(pm, nw, i, f_bus, t_bus, f_connections, t_connections)
-#    constraint_mc_switch_power_open_close_inline_ne(pm, nw, i, f_bus, t_bus, f_connections, t_connections)
+    constraint_mc_switch_inline_ne_voltage_open_close(pm, nw, i, f_bus, t_bus, f_connections, t_connections)
+    constraint_mc_switch_inline_ne_power_open_close(pm, nw, i, f_bus, t_bus, f_connections, t_connections)
+end
+
+"""
+    constraint_mc_switch_thermal_limit_ne(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for switch thermal limit constraint
+"""
+function constraint_mc_switch_inline_ne_thermal_limit(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    switch = _PMD.ref(pm, nw, :switch_inline_ne, i)
+    f_idx = (i, switch["f_bus"], switch["t_bus"])
+
+    if !haskey(_PMD.con(pm, nw), :mu_sm_switch_inline_ne)
+        _PMD.con(pm, nw)[:mu_sm_switch_inline_ne] = Dict{Tuple{Int,Int,Int},Vector{JuMP.ConstraintRef}}()
+    end
+
+    if haskey(switch, "thermal_rating") && any(switch["thermal_rating"] .< Inf)
+        constraint_mc_switch_inline_ne_thermal_limit(pm, nw, f_idx, switch["f_connections"], switch["thermal_rating"])
+    end
+    nothing
 end

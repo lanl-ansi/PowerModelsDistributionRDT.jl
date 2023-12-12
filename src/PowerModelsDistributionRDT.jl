@@ -37,6 +37,7 @@ module PowerModelsDistributionRDT
     include("form/shared.jl")
     include("form/acr.jl")
     include("form/acp.jl")
+    include("form/apo.jl")
     include("form/lindistflow.jl")
 
 

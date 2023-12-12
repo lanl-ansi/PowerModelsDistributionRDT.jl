@@ -469,13 +469,13 @@ generic switch power open/closed constraint
 \end{align}
 ```
 """
-function constraint_mc_switch_power_open_close_inline_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
-    psw = _PMD.var(pm, nw, :psw, (i, f_bus, t_bus))
-    qsw = _PMD.var(pm, nw, :qsw, (i, f_bus, t_bus))
+function constraint_mc_switch_inline_ne_power_open_close(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+    psw = _PMD.var(pm, nw, :psw_inline_ne, (i, f_bus, t_bus))
+    qsw = _PMD.var(pm, nw, :qsw_inline_ne, (i, f_bus, t_bus))
 
     state = _PMD.var(pm, nw, :switch_inline_ne_state, i)
 
-    rating = min.(fill(1.0, length(f_connections)), _PMD._calc_branch_power_max_frto(ref(pm, nw, :switch, i), ref(pm, nw, :bus, f_bus), ref(pm, nw, :bus, t_bus))...)
+    rating = min.(fill(1.0, length(f_connections)), _PMD._calc_branch_power_max_frto(_PMD.ref(pm, nw, :switch_inline_ne, i), _PMD.ref(pm, nw, :bus, f_bus), _PMD.ref(pm, nw, :bus, t_bus))...)
 
     for (idx, c) in enumerate(f_connections)
         JuMP.@constraint(pm.model, psw[c] <=  rating[idx] * state)
@@ -487,4 +487,23 @@ function constraint_mc_switch_power_open_close_inline_ne(pm::_PMD.AbstractUnbala
         # JuMP.@constraint(pm.model, !state => {psw[c] == 0.0})
         # JuMP.@constraint(pm.model, !state => {qsw[c] == 0.0})
     end
+end
+
+"""
+    constraint_mc_switch_inline_ne_ampacity(pm::AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+
+Template function for switch current limit constraint from-side
+"""
+function constraint_mc_switch_inline_ne_ampacity(pm::_PMD.AbstractUnbalancedPowerModel, i::Int; nw::Int=nw_id_default)::Nothing
+    switch = _PMD.ref(pm, nw, :switch_inline_ne, i)
+    f_idx = (i, switch["f_bus"], switch["t_bus"])
+
+    if !haskey(_PMD.con(pm, nw), :mu_cm_switch_inline_ne)
+        _PMD.con(pm, nw)[:mu_cm_switch_inline_ne] = Dict{Tuple{Int,Int,Int}, Vector{JuMP.ConstraintRef}}()
+    end
+
+    if haskey(switch, "current_rating") && any(switch["current_rating"] .< Inf)
+        constraint_mc_switch_inline_ne_ampacity(pm, nw, f_idx, switch["f_connections"], switch["current_rating"])
+    end
+    nothing
 end

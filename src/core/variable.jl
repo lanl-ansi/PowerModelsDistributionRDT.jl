@@ -339,7 +339,7 @@ end
 function variable_mc_switch_inline_ne_power_real(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
     connections = Dict((l,i,j) => connections for (bus,entry) in _PMD.ref(pm, nw, :bus_arcs_conns_switch_inline_ne) for ((l,i,j), connections) in entry)
     psw = Dict((l,i,j) => JuMP.@variable(pm.model,
-            [c in connections[(l,i,j)]], base_name="$(nw)_psw__inline_ne_$((l,i,j))",
+            [c in connections[(l,i,j)]], base_name="$(nw)_psw_inline_ne_$((l,i,j))",
             start = _PMD.comp_start_value(_PMD.ref(pm, nw, :switch_inline_ne, l), "psw_start", c, 0.0)
         ) for (l,i,j) in _PMD.ref(pm, nw, :arcs_switch_inline_ne)
     )
@@ -371,7 +371,7 @@ function variable_mc_switch_inline_ne_power_real(pm::_PMD.AbstractUnbalancedPowe
         end
     end
 
-    _PMD.var(pm, nw)[:psw_ne] = psw_auxes
+    _PMD.var(pm, nw)[:psw_inline_ne] = psw_auxes
 
     report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :pf_ne, :pt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), psw_expr)
 end
@@ -413,7 +413,7 @@ function variable_mc_switch_inline_ne_power_imaginary(pm::_PMD.AbstractUnbalance
         end
     end
 
-    _PMD.var(pm, nw)[:qsw_ne] = qsw_auxes
+    _PMD.var(pm, nw)[:qsw_inline_ne] = qsw_auxes
 
     report && _IM.sol_component_value_edge(pm, _PMD.pmd_it_sym, nw, :switch_inline_ne, :qf_ne, :qt_ne, _PMD.ref(pm, nw, :arcs_switch_inline_ne_from), _PMD.ref(pm, nw, :arcs_switch_inline_ne_to), qsw_expr)
 end

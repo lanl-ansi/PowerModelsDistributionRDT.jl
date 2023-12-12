@@ -20,8 +20,8 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
     qs     = get(_PMD.var(pm, nw), :qs,     Dict()); _PMD._check_var_keys(qs,  bus_storage,       "reactive power", "storage")
     psw    = get(_PMD.var(pm, nw), :psw,    Dict()); _PMD._check_var_keys(psw, bus_arcs_sw,       "active power",   "switch")
     qsw    = get(_PMD.var(pm, nw), :qsw,    Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw,       "reactive power", "switch")
-    psw_ne = get(_PMD.var(pm, nw), :psw_ne, Dict()); _PMD._check_var_keys(psw, bus_arcs_sw_ne,    "active power",   "switch_inline_ne")
-    qsw_ne = get(_PMD.var(pm, nw), :qsw_ne, Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw_ne,    "reactive power", "switch_inline_ne")
+    psw_ne = get(_PMD.var(pm, nw), :psw_inline_ne, Dict()); _PMD._check_var_keys(psw, bus_arcs_sw_ne,    "active power",   "switch_inline_ne")
+    qsw_ne = get(_PMD.var(pm, nw), :qsw_inline_ne, Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw_ne,    "reactive power", "switch_inline_ne")
     pt     = get(_PMD.var(pm, nw), :pt,     Dict()); _PMD._check_var_keys(pt,  bus_arcs_trans,    "active power",   "transformer")
     qt     = get(_PMD.var(pm, nw), :qt,     Dict()); _PMD._check_var_keys(qt,  bus_arcs_trans,    "reactive power", "transformer")
     pt_ne  = get(_PMD.var(pm, nw), :pt_ne,  Dict()); _PMD._check_var_keys(pt,  bus_arcs_trans_ne, "active power",   "transformer_ne")
@@ -344,7 +344,7 @@ nonlinear switch power on/off constraint for ac-rect form
 \end{align}
 ```
 """
-function constraint_mc_switch_voltage_open_close_inline_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
     vr_fr = _PMD.var(pm, nw, :vr, f_bus)
     vr_to = _PMD.var(pm, nw, :vr, t_bus)
     vi_fr = _PMD.var(pm, nw, :vi, f_bus)
@@ -372,4 +372,28 @@ function constraint_mc_switch_voltage_open_close_inline_ne(pm::_PMD.AbstractUnba
         # JuMP.@constraint(pm.model, state => {vr_fr[fc] == vr_to[tc]})
         # JuMP.@constraint(pm.model, state => {vi_fr[fc] == vi_to[tc]})
     end
+end
+
+@doc raw"""
+    constraint_mc_switch_inline_ne_ampacity(pm::AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+
+ACP current limit constraint on switches
+
+math```
+p_{fr}^2 + q_{fr}^2 \leq (vr_{fr}^2 + vi_{fr}^2) i_{max}^2
+```
+"""
+function constraint_mc_switch_inline_ne_ampacity(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
+    psw_fr = [var(pm, nw, :psw_inline_ne, f_idx)[c] for c in f_connections]
+    qsw_fr = [var(pm, nw, :qsw_inline_ne, f_idx)[c] for c in f_connections]
+    vr_fr = [var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
+    vi_fr = [var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
+
+    _PMD.con(pm, nw, :mu_cm_switch_inline_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, psw_fr[idx]^2 + qsw_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2) for idx in findall(c_rating .< Inf)]
+
+    if _IM.report_duals(pm)
+        _PMD.sol(pm, nw, :switch_inline_ne, f_idx[1])[:mu_cm_fr] = mu_cm_fr
+    end
+
+    nothing
 end

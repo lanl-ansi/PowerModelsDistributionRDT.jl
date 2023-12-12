@@ -12,7 +12,7 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedDCPModel
     psw     = get(_PMD.var(pm, nw), :psw,    Dict()); _PMD._check_var_keys(psw, bus_arcs_sw, "active power", "switch")
     pt      = get(_PMD.var(pm, nw), :pt,     Dict()); _PMD._check_var_keys(pt, bus_arcs_trans, "active power", "transformer")
     p_ne    = get(_PMD.var(pm, nw), :p_ne,   Dict()); _PMD._check_var_keys(p, bus_arcs_ne, "active power", "branch_ne")
-    psw_ne  = get(_PMD.var(pm, nw), :psw,    Dict()); _PMD._check_var_keys(psw, bus_arcs_sw_ne, "active power", "switch_inline_ne")
+    psw_ne  = get(_PMD.var(pm, nw), :psw_inline_ne,    Dict()); _PMD._check_var_keys(psw, bus_arcs_sw_ne, "active power", "switch_inline_ne")
     pt_ne   = get(_PMD.var(pm, nw), :pt_ne,  Dict()); _PMD._check_var_keys(pt, bus_arcs_trans_ne, "active power", "transformer_ne")
     pg_ne   = get(_PMD.var(pm, nw), :pg_ne, Dict()); _PMD._check_var_keys(pg_ne, bus_gens_ne, "active power", "generator_ne")
 

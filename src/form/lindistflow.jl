@@ -10,7 +10,7 @@ Linear switch power on/off constraint for LPUBFDiagModel.
 \end{align}
 ```
 """
-function constraint_mc_switch_voltage_open_close_inline_ne(pm::_PMD.LPUBFDiagModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
+function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.LPUBFDiagModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
     w_fr = _PMD.var(pm, nw, :w, f_bus)
     w_to = _PMD.var(pm, nw, :w, t_bus)
 
