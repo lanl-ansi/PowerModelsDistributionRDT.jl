@@ -13,6 +13,7 @@ Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
 PowerModels = "c36e90e8-916a-50a6-bd94-075b64ef4655"
 PowerModelsDistribution = "d7431456-977f-11e9-2de3-97ff7677985e"
 PowerModelsONM = "25264005-a304-4053-a338-565045d392ac"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [compat]
 InfrastructureModels = "0.7"

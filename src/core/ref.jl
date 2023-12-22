@@ -1,55 +1,4 @@
 
-#function ref_add_critical_leve!(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw, limit::Float64 = .90)
-#    _PMs.ref(pm, nw)[:critical_level] = limit
-#end
-
-#function ref_add_demand_level!(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw, limit::Float64 = .80)
-#    _PMs.ref(pm, nw)[:demand_level] = limit
-#end
-
-#function ref_add_vm_imbalance!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-#    if _IM.ismultinetwork(data)
-#        nws_data = data["nw"]
-#    else
-#        nws_data = Dict("0" => data)
-#    end
-#    for (n, nw_data) in nws_data
-#        nw_id = parse(Int, n)
-#        nw_ref = ref[:nw][nw_id]
-#        nw_ref[:bus_bal] = []
-#        for (i, bus) in nw_data["bus"]
-#            haskey(bus, "vm_vuf_max") ? append!(nw_ref[:bus_bal], parse(Int,i)) : nothing
-#        end
-#    end
-#end
-
-#function ref_add_pq_imbalance!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-#    if _IM.ismultinetwork(data)
-#        nws_data = data["nw"]
-#    else
-#        nws_data = Dict("0" => data)
-#    end
-#    for (n, nw_data) in nws_data
-#        nw_id = parse(Int, n)
-#        nw_ref = ref[:nw][nw_id]
-#        nw_ref[:arcs_bal] = Tuple{Int64,Int64, Int64}[]
-#        for (i, branch) in nw_data["branch"]
-#            if haskey(branch, "pq_imbalance")
-#                j = branch["f_bus"]
-#                k = branch["t_bus"]
-#                push!(nw_ref[:arcs_bal], (parse(Int,i),j,k))
-#            end
-#        end
-#        for (i,trans) in nw_data["transformer"]
-#            if haskey(trans, "pq_imbalance")
-#                j = trans["f_bus"]
-#                k = trans["t_bus"]
-#                push!(nw_ref[:arcs_bal], (parse(Int,i),j,k))
-#            end
-#        end
-#    end
-#end
-
 function ref_add_branch_ne!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
         ### filter out inactive components ###
@@ -178,6 +127,14 @@ function ref_add_undamaged_branch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:
 end
 
 
+function ref_add_damaged_tag!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+    for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
+        for i in nw_ref[:damaged_branch]
+            nw_ref[:branch][i]["is_damaged"] = true
+        end
+    end
+end
+
 function ref_add_global_constants!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     for (nw, nw_ref) in ref[:it][_PMD.pmd_it_sym][:nw]
         nw_ref[:total_real_load] = calc_total_real_load(nw_ref[:load])
@@ -186,129 +143,129 @@ function ref_add_global_constants!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:
     end
 end
 
-# functions to enumerate sub tours:
-#       - genSubTour: generate a list of cycles, each item as a set with the buses cycled through
-#       - findCycle: with two paths forming a cycle, extracting the cycle
-#       - node2arcs: convert the output of genSubTour to a list of cycles with arcs
-#function findCycle(path1, path2)
-    # once we get two paths that merge, get the cycle part
-#    sInd = 1;
-#    sameBool = true;
-#    while sameBool
-#        if path1[sInd] == path2[sInd]
-#            if sInd < min(length(path1),length(path2))
-#                sInd += 1;
-#            else
-#                sameBool = false;
-#            end
-#        else
-#            sameBool = false;
-#            sInd -= 1;
-#        end
-#    end
-#    cycle = [path1[sInd]];
-#    for i1 in (sInd+1):length(path1)
-#        push!(cycle,path1[i1]);
-#    end
-#    for i2 in (sInd+1):length(path2)
-#        push!(cycle,path2[i2]);
-#    end
-#    return unique(cycle);
-#end
+"""
+    _ref_add_load_blocks!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
 
-#function genSubTour(ref::Dict{Symbol,<:Any})
-    # start searching from each node
-    # get a list of all buses
-    # all_bus = keys(pm, :bus)
-    # println(all_bus)
-#    cycle_list = Dict();
-#    tourList = [];
-#    for i in keys(ref[:bus])
-#        cycle_list[i] = [];
-#        marked_bus = [i];
-#        history_bus = Dict();
-#        from_bus = Dict();
-#        for j in keys(ref[:bus])
-#            history_bus[j] = [];
-#            from_bus[j] = -1;
+Ref extension to add load blocks to ref for a single element of a multi-network
+    The key difference with the implementation of PowerModelsONM is that the observation that some edges can be damaged potentially increases the number of load blocks
+"""
+function _ref_add_load_blocks!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+    ref[:blocks] = Dict{Int,Set}(i => block.second for (i,block) in enumerate(sort([sum(map(x->SHA.sha1(string(ref[:bus][x]["name"])), collect(b)))=>b for b in calc_connected_components(data; type="load_blocks", check_enabled=true)]; by=x->x.first)))
+    ref[:bus_block_map] = Dict{Int,Int}(bus => b for (b,block) in ref[:blocks] for bus in block)
+#    ref[:block_branches] = Dict{Int,Set}(b => Set{Int}() for (b,_) in ref[:blocks])
+#    ref[:block_loads] = Dict{Int,Set}(i => Set{Int}() for (i,_) in ref[:blocks])
+#    ref[:block_weights] = Dict{Int,Real}(i => 1.0 for (i,_) in ref[:blocks])
+#    ref[:block_shunts] = Dict{Int,Set{Int}}(i => Set{Int}() for (i,_) in ref[:blocks])
+#    ref[:block_gens] = Dict{Int,Set{Int}}(i => Set{Int}() for (i,_) in ref[:blocks])
+#    ref[:block_storages] = Dict{Int,Set{Int}}(i => Set{Int}() for (i,_) in ref[:blocks])
+#    ref[:microgrid_blocks] = Dict{Int,String}()
+#    ref[:substation_blocks] = Vector{Int}()
+#    ref[:bus_inverters] = Dict{Int,Set{Tuple{Symbol,Int}}}(i => Set{Tuple{Symbol,Int}}() for (i,_) in ref[:bus])
+#    ref[:block_inverters] = Dict{Int,Set{Tuple{Symbol,Int}}}(b => Set{Tuple{Symbol,Int}}() for (b,_) in ref[:blocks])
+#    ref[:dispatchable_loads] = Dict{Int, Dict}(i => load for (i,load) in ref[:load] if Int(load["dispatchable"]) == Int(_PMD.YES))
+#    ref[:nondispatchable_loads] = Dict{Int, Dict}(i => load for (i,load) in ref[:load] if Int(load["dispatchable"]) == Int(_PMD.NO))
+#    ref[:block_dispatchable_loads] = Dict{Int,Set}(i => Set{Int}() for (i,_) in ref[:blocks])
+
+#    for (b,bus) in ref[:bus]
+#        if !isempty(get(bus, "microgrid_id", ""))
+#            ref[:block_weights][ref[:bus_block_map][b]] = 10.0
+#            ref[:microgrid_blocks][ref[:bus_block_map][b]] = bus["microgrid_id"]
 #        end
-#        history_bus[i] = [i];
-#        busList = [i];
-        # BFS to get all cycles starts/ends at bus i
-#        while busList != []
-            # get the adjacent buses of current_bus
-#            current_bus = busList[1];
-            # println(current_bus, " ", from_bus[current_bus]);
-            # get the adjacent buses of the current bus
-#            adjacent_bus = unique([arcs[3] for arcs in ref[:bus_arcs][current_bus]]);
-#            history_current = history_bus[current_bus];
-#            for j in adjacent_bus
-#                if (!(j in marked_bus))
-#                    push!(marked_bus,j);
-#                    push!(busList,j);
-#                    from_bus[j] = current_bus;
-#                    history_j = copy(history_current);
-#                    history_bus[j] = push!(history_j,j);
-#                elseif j != from_bus[current_bus]
-                    # record the cycle
-#                    cycle = Set(findCycle(history_bus[current_bus],history_bus[j]));
-#                    if !(cycle in cycle_list[i])
-#                        push!(cycle_list[i],cycle);
+#    end
+
+#    for (br,branch) in ref[:branch]
+#        push!(ref[:block_branches][ref[:bus_block_map][branch["f_bus"]]], br)
+#    end
+#    ref[:block_line_losses] = Dict{Int,Float64}(i => sum(Float64[LinearAlgebra.norm(ref[:branch][br]["br_r"].+1im*ref[:branch][br]["br_x"]) for br in branches if ref[:branch][br][_PMD.pmd_math_component_status["branch"]] != _PMD.pmd_math_component_status_inactive["branch"]]) for (i,branches) in ref[:block_branches])
+
+#    for (l,load) in ref[:load]
+#        push!(ref[:block_loads][ref[:bus_block_map][load["load_bus"]]], l)
+#        ref[:block_weights][ref[:bus_block_map][load["load_bus"]]] += 1e-2 * get(load, "priority", 1)
+#        Int(load["dispatchable"]) == Int(_PMD.YES) && push!(ref[:block_dispatchable_loads][ref[:bus_block_map][load["load_bus"]]], l)
+#    end
+#    ref[:load_block_map] = Dict{Int,Int}(load => b for (b,block_loads) in ref[:block_loads] for load in block_loads)
+
+#    for (s,shunt) in ref[:shunt]
+#        push!(ref[:block_shunts][ref[:bus_block_map][shunt["shunt_bus"]]], s)
+#    end
+#    ref[:shunt_block_map] = Dict{Int,Int}(shunt => b for (b,block_shunts) in ref[:block_shunts] for shunt in block_shunts)
+
+#    for (g,gen) in ref[:gen]
+#        push!(ref[:block_gens][ref[:bus_block_map][gen["gen_bus"]]], g)
+#        startswith(gen["source_id"], "voltage_source") && push!(ref[:substation_blocks], ref[:bus_block_map][gen["gen_bus"]])
+#        push!(ref[:bus_inverters][gen["gen_bus"]], (:gen, g))
+#        push!(ref[:block_inverters][ref[:bus_block_map][gen["gen_bus"]]], (:gen, g))
+#    end
+#    ref[:gen_block_map] = Dict{Int,Int}(gen => b for (b,block_gens) in ref[:block_gens] for gen in block_gens)
+
+#    for (s,strg) in ref[:storage]
+#        push!(ref[:block_storages][ref[:bus_block_map][strg["storage_bus"]]], s)
+#        push!(ref[:bus_inverters][strg["storage_bus"]], (:storage, s))
+#        push!(ref[:block_inverters][ref[:bus_block_map][strg["storage_bus"]]], (:storage, s))
+#    end
+#    ref[:storage_block_map] = Dict{Int,Int}(strg => b for (b,block_storages) in ref[:block_storages] for strg in block_storages)
+
+#    for (i,_) in ref[:blocks]
+#        if isempty(ref[:block_loads][i]) && isempty(ref[:block_shunts][i]) && isempty(ref[:block_gens][i]) && isempty(ref[:block_storages][i])
+#            ref[:block_weights][i] = 0.0
+#        end
+#    end
+
+#    ref[:block_graph] = Graphs.SimpleGraph(length(ref[:blocks]))
+#    ref[:block_graph_edge_map] = Dict{Graphs.Edge,Int}()
+#    ref[:block_switches] = Dict{Int,Set{Int}}(b => Set{Int}() for (b,_) in ref[:blocks])
+
+#    for (s,switch) in ref[:switch]
+#        f_block = ref[:bus_block_map][switch["f_bus"]]
+#        t_block = ref[:bus_block_map][switch["t_bus"]]
+#        Graphs.add_edge!(ref[:block_graph], f_block, t_block)
+#        ref[:block_graph_edge_map][Graphs.Edge(f_block, t_block)] = s
+#        ref[:block_graph_edge_map][Graphs.Edge(t_block, f_block)] = s
+
+#        if Int(switch["dispatchable"]) == Int(_PMD.YES) && Int(switch["status"]) == Int(_PMD.ENABLED)
+#            push!(ref[:block_switches][f_block], s)
+#            push!(ref[:block_switches][t_block], s)
+#        end
+#    end
+
+    # Build block pairs for radiality constraints
+    ref[:block_pairs] = filter(((x,y),)->x!=y, Set{Tuple{Int,Int}}(
+            Set([(ref[:bus_block_map][sw["f_bus"]],ref[:bus_block_map][sw["t_bus"]]) for (_,sw) in ref[:switch]]),
+    ))
+
+#    ref[:neighbors] = Dict{Int,Vector{Int}}(i => Graphs.neighbors(ref[:block_graph], i) for i in Graphs.vertices(ref[:block_graph]))
+
+#    ref[:switch_scores] = Dict{Int,Float64}(s => 0.0 for (s,_) in ref[:switch])
+#    total_line_losses = sum(values(ref[:block_line_losses]))
+#    for type in ["storage", "gen"]
+#        for (id,obj) in ref[Symbol(type)]
+#            if obj[_PMD.pmd_math_component_status[type]] != _PMD.pmd_math_component_status_inactive[type]
+#                start_block = ref[:bus_block_map][obj["$(type)_bus"]]
+#                paths = Graphs.enumerate_paths(Graphs.dijkstra_shortest_paths(ref[:block_graph], start_block))
+
+#                for path in paths
+#                    cumulative_weight = 0.0
+#                    for (i,b) in enumerate(reverse(path[2:end]))
+#                        block_line_losses = 1e-2 * ref[:block_line_losses][b]
+#                        cumulative_weight += 1e-2 * ref[:block_weights][b]
+
+#                        adjusted_cumulative_weight = cumulative_weight - (total_line_losses == 0.0 ? 0.0 : block_line_losses / total_line_losses)
+#                        ref[:switch_scores][ref[:block_graph_edge_map][Graphs.Edge(path[end-i],b)]] += adjusted_cumulative_weight < 0 ? 0.0 : adjusted_cumulative_weight
 #                    end
 #                end
 #            end
-#            deleteat!(busList,1);
-#        end
-#        append!(tourList,cycle_list[i]);
-#    end
-#    return unique(tourList);
-#end
-
-#function node2arcs(cycle, ref::Dict{Symbol,<:Any})
-    # convert the output from genSubTour (node cycle) to arc cyle
-#    nodeList = sort([item for item in cycle]);
-    # get a dictionary with each pair of adjacent nodes
-#    arcDict = Dict();
-#    for i in 1:length(nodeList)
-#        for j in i+1:length(nodeList)
-#            arcDict[nodeList[i],nodeList[j]] = [a for a in ref[:bus_arcs][i] if j == a[3]];
 #        end
 #    end
-#    arcIter = [];
-#    for aKey in keys(arcDict)
-#        if arcDict[aKey] != []
-#            push!(arcIter,arcDict[aKey])
-#        end
-#    end
-#    arc_cycle_list = [];
-#    for i in Iterators.product(arcIter...)
-#        push!(arc_cycle_list,i);
-#    end
+end
 
-#    return arc_cycle_list;
-#end
+"""
+    ref_add_load_blocks!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
 
-
-#function ref_add_subtour!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
-#    if _IM.ismultinetwork(data)
-#        nws_data = data["nw"]
-#    else
-#        nws_data = Dict("0" => data)
-#    end
-#    for (n, nw_data) in nws_data
-#        nw_id = parse(Int, n)
-#        nw_ref = ref[:nw][nw_id]
-#        tourList = genSubTour(nw_ref)
-#        nw_ref[:arc_tour] = []
-#        for tour in tourList
-#            hold = []
-#            for arc_tour in node2arcs(tour, nw_ref)
-#                append!(hold, arc_tour)
-#            end
-#            push!(nw_ref[:arc_tour], hold)
-#        end
-#    end
-#end
+Ref extension to add load blocks to ref for all time steps
+"""
+function ref_add_load_blocks!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
+    _PMD.apply_pmd!(_ref_add_load_blocks!, ref, data; apply_to_subnetworks=true)
+end
 
 function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     ref_add_branch_ne!(ref, data)
@@ -317,11 +274,8 @@ function ref_add_rdt!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     ref_add_gen_ne!(ref, data)
     ref_add_switch_inline_ne!(ref,data)
     ref_add_undamaged_branch!(ref,data)
+    ref_add_damaged_tag!(ref,data)
     ref_add_global_constants!(ref,data)
-    _PMONM.ref_add_load_blocks!(ref,data)
+    ref_add_load_blocks!(ref,data)
     _PMONM.ref_add_options!(ref,data)
-#    ref_add_onm_options!(ref,data)
-#    ref_add_vm_imbalance!(ref, data)
-#    ref_add_pq_imbalance!(ref, data)
-#    ref_add_subtour!(ref, data)
 end

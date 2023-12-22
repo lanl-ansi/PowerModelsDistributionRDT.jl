@@ -7,6 +7,7 @@ module PowerModelsDistributionRDT
     import PowerModels
     import PowerModelsDistribution
     import PowerModelsONM
+    import SHA
 
     const _PM    = PowerModels
     const _PMD   = PowerModelsDistribution

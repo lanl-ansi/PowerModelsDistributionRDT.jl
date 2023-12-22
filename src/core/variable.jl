@@ -1,25 +1,4 @@
 
-#function variable_branch_be(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)
-#    variable_branch_be_p(pm)
-#    variable_branch_be_q(pm)
-#end
-
-#function variable_branch_be_p(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)
-#    _PMs.var(pm, nw)[:be_p] = JuMP.@variable(pm.model,
-#    [(l,i,j) in _PMs.ref(pm, nw, :arcs_bal)],
-#    base_name = "$(nw)_branch_be_p",
-#    binary = true,
-#    start = 0)
-#end
-
-#function variable_branch_be_q(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)
-#    _PMs.var(pm, nw)[:be_q] = JuMP.@variable(pm.model,
-#    [(l,i,j) in _PMs.ref(pm, nw, :arcs_bal)],
-#    base_name = "$(nw)_branch_be_q",
-#    binary = true,
-#    start = 0)
-#end
-
 function variable_xe(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id_default, relax::Bool=false, report::Bool=true)
     if relax
         xe = _PMD.var(pm, nw)[:xe] = JuMP.@variable(pm.model,

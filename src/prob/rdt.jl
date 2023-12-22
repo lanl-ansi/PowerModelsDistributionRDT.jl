@@ -3,6 +3,7 @@ function solve_rdt(data::Dict{String,Any}, model_type, solver; kwargs...)
     return _PMD.solve_mc_model(data, model_type, solver, build_mc_rdt; multinetwork=true, ref_extensions=[ref_add_rdt!], eng2math_extensions=[transform_switch_inline_ne!,transform_switch_inline!], kwargs...)
 end
 
+# formulation and equation numbers from this paper https://pubsonline.informs.org/doi/abs/10.1287/ijoc.2019.0899
 function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
     variable_he(pm); # 1d h_e variables
     variable_te(pm; relax=true); # 1d t_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
@@ -29,7 +30,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
 
 #        variable_branch_be(pm) # b_e variables
 
-         variable_xe_s(pm; nw=n, relax=true) # x_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
+         variable_xe_s(pm; nw=n, relax=false) # x_e variables - discrete because we assume new edges all have switches on them
 #         variable_ze_s(pm; nw=n) # z_e variables - may not need because switches are distinct objects now
          variable_he_s(pm; nw=n, relax=true) # h_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
          variable_ue_s(pm; nw=n, relax=true) # u_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
@@ -147,7 +148,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             _PMD.constraint_mc_storage_thermal_limit(pm, i; nw=n)
         end
 
-        constraint_radial_topology_ne(pm; nw=n)
+        constraint_radial_topology_ne(pm; nw=n) # constraint XXXXX
+
+        # need to add constraints on inverters and energizing loads
 
     end
 

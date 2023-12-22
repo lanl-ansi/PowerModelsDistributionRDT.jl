@@ -131,153 +131,6 @@ function constraint_total_load(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, l
 end
 
 
-
-#function constraint_mc_vm_vuf(pm::_PMs.AbstractPowerModel, nw::Int, bus, vufmax)
-#    (vma, vmb, vmc) = [_PMs.var(pm, nw, :vm)[bus][i] for i in 1:3]
-#    JuMP.@constraint(pm.model, vma - 1/3 * sum([_PMs.var(pm, nw, :vm)[bus][i] for i in 1:3]) <= vufmax/3 * sum([_PMs.var(pm, nw, :vm)[bus][i] for i in 1:3]))
-#    JuMP.@constraint(pm.model, vmb - 1/3 * sum([_PMs.var(pm, nw, :vm)[bus][i] for i in 1:3]) <= vufmax/3 * sum([_PMs.var(pm, nw, :vm)[bus][i] for i in 1:3]))
-#    JuMP.@constraint(pm.model, vmc - 1/3 * sum([_PMs.var(pm, nw, :vm)[bus][i] for i in 1:3]) <= vufmax/3 * sum([_PMs.var(pm, nw, :vm)[bus][i] for i in 1:3]))
-#end
-
-#function constraint_mc_vm_vuf_lin(pm::_PMs.AbstractPowerModel, nw::Int, bus, vufmax)
-#    (wa, wb, wc) = [_PMs.var(pm, nw, :w)[bus][i] for i in 1:3]
-#    JuMP.@constraint(pm.model, wa - 1/3 * sum([_PMs.var(pm, nw, :w)[bus][i] for i in 1:3]) <= vufmax/6 * sum([_PMs.var(pm, nw, :w)[bus][i] for i in 1:3]))
-#    JuMP.@constraint(pm.model, wb - 1/3 * sum([_PMs.var(pm, nw, :w)[bus][i] for i in 1:3]) <= vufmax/6 * sum([_PMs.var(pm, nw, :w)[bus][i] for i in 1:3]))
-#    JuMP.@constraint(pm.model, wc - 1/3 * sum([_PMs.var(pm, nw, :w)[bus][i] for i in 1:3]) <= vufmax/6 * sum([_PMs.var(pm, nw, :w)[bus][i] for i in 1:3]))
-#end
-
-#function constraint_switch(pm::_PMs.AbstractPowerModel, xe, te)
-#    JuMP.@constraint(pm.model, xe >= te)
-#end
-
-#function constraint_harden(pm::_PMs.AbstractPowerModel, xe, he)
-#    JuMP.@constraint(pm.model, xe == he)
-#end
-
-#function constraint_mc_ohms_yt_from(pm::_PMs.AbstractPowerModel, n::Int, f_bus, t_bus, f_idx, t_idx, g, b, g_fr, b_fr, tr, ti, tm)
-#    p_fr  = _PMs.var(pm, n,  :p, f_idx)
-#    q_fr  = _PMs.var(pm, n,  :q, f_idx)
-#    vm_fr = _PMs.var(pm, n, :vm, f_bus)
-#    vm_to = _PMs.var(pm, n, :vm, t_bus)
-#    va_fr = _PMs.var(pm, n, :va, f_bus)
-#    va_to = _PMs.var(pm, n, :va, t_bus)
-#    z_branch = _PMs.var(pm, n, :z_branch, f_idx)
-
-#    cnds = _PMD.conductor_ids(pm; nw=n)
-#    for c in cnds
-#        JuMP.@NLconstraint(pm.model, p_fr[c] ==
-#                                        ((g[c,c]+g_fr[c,c])*vm_fr[c]^2
-#                                        +sum( (g[c,d]+g_fr[c,d]) * vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d])
-#                                             +(b[c,d]+b_fr[c,d]) * vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d])
-#                                             for d in cnds if d != c)
-#                                        +sum(-g[c,d]*vm_fr[c]*vm_to[d]*cos(va_fr[c]-va_to[d])
-#                                             -b[c,d]*vm_fr[c]*vm_to[d]*sin(va_fr[c]-va_to[d])
-#                                             for d in cnds)
-#                                        ) * z_branch
-#                                    )
-#        JuMP.@NLconstraint(pm.model, q_fr[c] == (-(b[c,c]+b_fr[c,c])*vm_fr[c]^2
-#                                        -sum( (b[c,d]+b_fr[c,d])*vm_fr[c]*vm_fr[d]*cos(va_fr[c]-va_fr[d])
-#                                             -(g[c,d]+g_fr[c,d])*vm_fr[c]*vm_fr[d]*sin(va_fr[c]-va_fr[d])
-#                                             for d in cnds if d != c)
-#                                        -sum(-b[c,d]*vm_fr[c]*vm_to[d]*cos(va_fr[c]-va_to[d])
-#                                             +g[c,d]*vm_fr[c]*vm_to[d]*sin(va_fr[c]-va_to[d])
-#                                             for d in cnds)
-#                                         * z_branch)
-#                                    )
-#    end
-#end
-
-#function constraint_mc_ohms_yt_to(pm::_PMs.AbstractPowerModel, n::Int, f_bus, t_bus, f_idx, t_idx, g, b, g_to, b_to, tr, ti, tm)
-#    constraint_mc_ohms_yt_from(pm, n, t_bus, f_bus, t_idx, f_idx, g, b, g_to, b_to, tr, ti, tm)
-#end
-
-#function constraint_activation_damage(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    z = _PMs.var(pm, nw, :z_branch, (arcs))
-#    xe = _PMs.var(pm, nw, :xe_d_s, (arcs))
-#    te = _PMs.var(pm, nw, :te_d_s, (arcs))
-#    JuMP.@constraint(pm.model, z == xe - te)
-#end
-
-#function constraint_activation_new(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    z = _PMs.var(pm, nw, :z_branch, (arcs))
-#    xe = _PMs.var(pm, nw, :xe_n_s, (arcs))
-#    te = _PMs.var(pm, nw, :te_n_s, (arcs))
-#    JuMP.@constraint(pm.model, z == xe - te)
-#end
-
-#function constraint_activation_active(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    z = _PMs.var(pm, nw, :z_branch, (arcs))
-#    JuMP.@constraint(pm.model, z == 1)
-#end
-
-#function constraint_variable_he_d(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    he_s = _PMs.var(pm, nw, :he_d_s, (arcs))
-#    he = _PMs.var(pm, pm.cnw, :he_d, (arcs))
-#    JuMP.@constraint(pm.model, he >= he_s)
-#end
-
-#function constraint_variable_he_n(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    he_s = _PMs.var(pm, nw, :he_n_s, (arcs))
-#    he = _PMs.var(pm, pm.cnw, :he_n, (arcs))
-#    JuMP.@constraint(pm.model, he >= he_s)
-#end
-
-#function constraint_variable_te_d(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    te_s = _PMs.var(pm, nw, :te_d_s, (arcs))
-#    te = _PMs.var(pm, pm.cnw, :te_d, (arcs))
-#    JuMP.@constraint(pm.model, te >= te_s)
-#end
-
-#function constraint_variable_te_n(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    te_s = _PMs.var(pm, nw, :te_n_s, (arcs))
-#    te = _PMs.var(pm, pm.cnw, :te_n, (arcs))
-#    JuMP.@constraint(pm.model, te >= te_s)
-#end
-
-#function constraint_variable_xe_d(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    xe_s = _PMs.var(pm, nw, :xe_d_s, (arcs))
-#    xe = _PMs.var(pm, pm.cnw, :xe_d, (arcs))
-#    JuMP.@constraint(pm.model, xe >= xe_s)
-#end
-
-#function constraint_variable_xe_n(pm::_PMs.AbstractPowerModel, nw::Int, arcs)
-#    xe_s = _PMs.var(pm, nw, :xe_n_s, (arcs))
-#    xe = _PMs.var(pm, pm.cnw, :xe_n, (arcs))
-#    JuMP.@constraint(pm.model, xe >= xe_s)
-#end
-
-#function constraint_mc_voltage_angle_difference(pm::_PMs.AbstractACPModel, nw::Int, f_idx, angmin, angmax)
-#    i, f_bus, t_bus = f_idx
-
-#    va_fr = _PMs.var(pm, nw, :va, f_bus)
-#    va_to = _PMs.var(pm, nw, :va, t_bus)
-#    z_branch = _PMs.var(pm, nw, :z_branch, (f_idx))
-#
-#    cnds = _PMD.conductor_ids(pm; nw=nw)
-
-#    for c in cnds
-#        JuMP.@NLconstraint(pm.model, z_branch*(va_fr[c] - va_to[c]) <= angmax[c])
-#        JuMP.@NLconstraint(pm.model, z_branch*(va_fr[c] - va_to[c]) >= angmin[c])
-#    end
-#end
-
-# add constraints for cycle elimination
-#function constraint_cycle_elimination(pm, nw::Int, tours)
-#    tour_sum = 0
-#    for arcs in tours
-#        ye = _PMs.var(pm, nw, :ye_s, arcs)
-#        tour_sum += ye;
-#    end
-#    JuMP.@constraint(pm.model, tour_sum <= length(tours) - 1);
-#end
-
-#function constraint_cycle_function(pm, nw::Int, arcs)
-#    z = _PMs.var(pm,  nw, :z_branch, arcs)
-#    ye = _PMs.var(pm, nw, :ye_s, arcs)
-#    JuMP.@constraint(pm.model, z <= ye)
-#end
-
-
 "on/off constraint for ne generators"
 function constraint_mc_gen_power_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int, i::Int, connections::Vector{<:Int}, pmin::Vector{<:Real}, pmax::Vector{<:Real}, qmin::Vector{<:Real}, qmax::Vector{<:Real})
     pg = _PMD.var(pm, nw, :pg_ne, i)
@@ -335,13 +188,14 @@ See 10.1109/TSG.2020.2985087
 ```
 """
 function constraint_radial_topology_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw::Int; relax::Bool=false)
+    # TODO AND THE hardening variables will change the bus blocks.  Lets get it without the hardening variables.  THEN we will redefine the bus blocks.
     # doi: 10.1109/TSG.2020.2985087
     _PMD.var(pm, nw)[:f] = Dict{Tuple{Int,Int,Int},JuMP.VariableRef}()
     _PMD.var(pm, nw)[:lambda] = Dict{Tuple{Int,Int},JuMP.VariableRef}()
     _PMD.var(pm, nw)[:beta] = Dict{Tuple{Int,Int},JuMP.VariableRef}()
     _PMD.var(pm, nw)[:alpha] = Dict{Tuple{Int,Int},Union{JuMP.VariableRef,JuMP.AffExpr,Int}}()
 
-    # "real" node and branch sets, based on load blocks
+    # "real" node and branch sets
     N₀ = _PMD.ids(pm, nw, :blocks)
     L₀ = _PMD.ref(pm, nw, :block_pairs)
 
@@ -354,98 +208,160 @@ function constraint_radial_topology_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw
     L = [L₀..., [(virtual_iᵣ, n) for n in N₀]...]
 
     # create a set L′ that inlcudes the branch reverses
-#    L′ = union(L, Set([(j,i) for (i,j) in L]))
+    L′ = union(L, Set([(j,i) for (i,j) in L]))
 
     # create variables fᵏ and λ over all L, including virtual branches connected to iᵣ
-#    for (i,j) in L′
-#        for k in filter(kk->kk∉iᵣ,N)
-#            var(pm, nw, :f)[(k, i, j)] = JuMP.@variable(pm.model, base_name="$(nw)_f_$((k,i,j))", start=(k,i,j) == (k,virtual_iᵣ,k) ? 1 : 0)
-#        end
-#        var(pm, nw, :lambda)[(i,j)] = JuMP.@variable(pm.model, base_name="$(nw)_lambda_$((i,j))", binary=!relax, lower_bound=0, upper_bound=1, start=(i,j) == (virtual_iᵣ,j) ? 1 : 0)
+    for (i,j) in L′
+        for k in filter(kk->kk∉iᵣ,N)
+            _PMD.var(pm, nw, :f)[(k, i, j)] = JuMP.@variable(pm.model, base_name="$(nw)_f_$((k,i,j))", start=(k,i,j) == (k,virtual_iᵣ,k) ? 1 : 0)
+        end
+        _PMD.var(pm, nw, :lambda)[(i,j)] = JuMP.@variable(pm.model, base_name="$(nw)_lambda_$((i,j))", binary=!relax, lower_bound=0, upper_bound=1, start=(i,j) == (virtual_iᵣ,j) ? 1 : 0)
 
         # create variable β over only original set L₀
-#        if (i,j) ∈ L₀
-#            var(pm, nw, :beta)[(i,j)] = JuMP.@variable(pm.model, base_name="$(nw)_beta_$((i,j))", lower_bound=0, upper_bound=1)
-#        end
-#    end
+        if (i,j) ∈ L₀
+            _PMD.var(pm, nw, :beta)[(i,j)] = JuMP.@variable(pm.model, base_name="$(nw)_beta_$((i,j))", lower_bound=0, upper_bound=1)
+        end
+    end
+
+#NOTE TO SELF - I THINK ALL I NEED TO DO IS DEFINE ALPHA ACROSS THE SPACE OF SWITCH STATES, INLINE SWITCH STATES, HARDENING OPTION, AND EXPANSION EDGES
+
+    bus_block_map = _PMD.ref(pm, nw, :bus_block_map)
+    branches = _PMD.ref(pm, nw, :branch)
 
     # create an aux varible α that maps to the switch states
-#    switch_lookup = Dict{Tuple{Int,Int},Vector{Int}}((ref(pm, nw, :bus_block_map, sw["f_bus"]), ref(pm, nw, :bus_block_map, sw["t_bus"])) => Int[ss for (ss,ssw) in ref(pm, nw, :switch) if (ref(pm, nw, :bus_block_map, sw["f_bus"])==ref(pm, nw, :bus_block_map, ssw["f_bus"]) && ref(pm, nw, :bus_block_map, sw["t_bus"])==ref(pm, nw, :bus_block_map, ssw["t_bus"])) || (ref(pm, nw, :bus_block_map, sw["f_bus"])==ref(pm, nw, :bus_block_map, ssw["t_bus"]) && ref(pm, nw, :bus_block_map, sw["t_bus"])==ref(pm, nw, :bus_block_map, ssw["f_bus"]))] for (s,sw) in ref(pm, nw, :switch))
-#    for ((i,j), switches) in switch_lookup
-#        var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, sum(var(pm, nw, :switch_state, s) for s in switches))
-#        JuMP.@constraint(pm.model, var(pm, nw, :alpha, (i,j)) <= 1)
-#    end
+    # This is a key block of code that differs from the radial topology implementation in PowerModelsONM
+    switch_lookup = Dict{Tuple{Int,Int},Vector{Int}}((bus_block_map[sw["f_bus"]], bus_block_map[sw["t_bus"]]) =>
+        Int[ss for (ss,ssw) in _PMD.ref(pm, nw, :switch)
+            if (bus_block_map[sw["f_bus"]]==bus_block_map[ssw["f_bus"]] && bus_block_map[sw["t_bus"]]==bus_block_map[ssw["t_bus"]]) ||
+               (bus_block_map[sw["f_bus"]]==bus_block_map[ssw["t_bus"]] && bus_block_map[sw["t_bus"]]==bus_block_map[ssw["f_bus"]])
+        ]
+        for (s,sw) in _PMD.ref(pm, nw, :switch)
+    )
 
-#    f = var(pm, nw, :f)
-#    λ = var(pm, nw, :lambda)
-#    β = var(pm, nw, :beta)
-#    α = var(pm, nw, :alpha)
+    switch_inline_ne_lookup = Dict{Tuple{Int,Int},Vector{Int}}((bus_block_map[sw["f_bus"]], bus_block_map[sw["t_bus"]]) =>
+        Int[ss for (ss,ssw) in _PMD.ref(pm, nw, :switch_inline_ne)
+            if (bus_block_map[sw["f_bus"]]==bus_block_map[ssw["f_bus"]] && bus_block_map[sw["t_bus"]]==bus_block_map[ssw["t_bus"]]) ||
+               (bus_block_map[sw["f_bus"]]==bus_block_map[ssw["t_bus"]] && bus_block_map[sw["t_bus"]]==bus_block_map[ssw["f_bus"]])
+        ]
+        for (s,sw) in _PMD.ref(pm, nw, :switch_inline_ne)
+    )
+
+    branch_ne_lookup = Dict{Tuple{Int,Int},Vector{Int}}((bus_block_map[branch["f_bus"]], bus_block_map[branch["t_bus"]]) =>
+        Int[bb for (bb,bbranch) in _PMD.ref(pm, nw, :branch_ne)
+            if (bus_block_map[branch["f_bus"]]==bus_block_map[bbranch["f_bus"]] && bus_block_map[branch["t_bus"]]==bus_block_map[bbranch["t_bus"]]) ||
+               (bus_block_map[branch["f_bus"]]==bus_block_map[bbranch["t_bus"]] && bus_block_map[branch["t_bus"]]==bus_block_map[bbranch["f_bus"]])
+        ]
+        for (b,branch) in _PMD.ref(pm, nw, :branch_ne)
+    )
+
+    branch_harden_lookup = Dict{Tuple{Int,Int},Vector{Int}}((bus_block_map[branches[b]["f_bus"]], bus_block_map[branches[b]["t_bus"]]) =>
+        Int[bb for bb in _PMD.ref(pm, nw, :branch_harden)
+            if (bus_block_map[branches[b]["f_bus"]]==bus_block_map[branches[bb]["f_bus"]] && bus_block_map[branches[b]["t_bus"]]==bus_block_map[branches[bb]["t_bus"]]) ||
+               (bus_block_map[branches[b]["f_bus"]]==bus_block_map[branches[bb]["t_bus"]] && bus_block_map[branches[b]["t_bus"]]==bus_block_map[branches[bb]["f_bus"]])
+        ]
+        for b in _PMD.ref(pm, nw, :branch_harden)
+    )
+
+    for ((i,j), switches) in switch_lookup
+        _PMD.var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, sum(_PMD.var(pm, nw, :switch_state, s) for s in switches))
+    end
+    for ((i,j), switches) in switch_inline_ne_lookup
+        if haskey(_PMD.var(pm, nw, :alpha), (i,j))
+            _PMD.var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, _PMD.var(pm, nw, :alpha)[(i,j)] + sum(_PMD.var(pm, nw, :switch_inline_ne_state, s) for s in switches))
+        else
+            _PMD.var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, sum(_PMD.var(pm, nw, :switch_inline_ne_state, s) for s in switches))
+        end
+    end
+    for ((i,j), branches_ne) in branch_ne_lookup
+        if haskey(_PMD.var(pm, nw, :alpha), (i,j))
+            _PMD.var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, _PMD.var(pm, nw, :alpha)[(i,j)] + sum(_PMD.var(pm, nw, :branches_ne, b) for b in branches_ne))
+        else
+            _PMD.var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, sum(_PMD.var(pm, nw, :xe_s, b) for b in branches_ne))
+        end
+    end
+    for ((i,j), branches_harden) in branch_harden_lookup
+        if haskey(_PMD.var(pm, nw, :alpha), (i,j))
+            _PMD.var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, _PMD.var(pm, nw, :alpha)[(i,j)] + sum(_PMD.var(pm, nw, :he_s, b) for b in branches_harden))
+        else
+            _PMD.var(pm, nw, :alpha)[(i,j)] = JuMP.@expression(pm.model, sum(_PMD.var(pm, nw, :he_s, b) for b in branches_harden))
+        end
+    end
+
+    for α in values(_PMD.var(pm, nw, :alpha))
+        c = JuMP.@constraint(pm.model, α <= 1)
+        println(c)
+    end
+
+    f = _PMD.var(pm, nw, :f)
+    λ = _PMD.var(pm, nw, :lambda)
+    β = _PMD.var(pm, nw, :beta)
+    α = _PMD.var(pm, nw, :alpha)
 
     # Eq. (1) -> Eqs. (3-8)
-#    for k in filter(kk->kk∉iᵣ,N)
-#        # Eq. (3)
-#        for _iᵣ in iᵣ
-#            jiᵣ = filter(((j,i),)->i==_iᵣ&&i!=j,L)
-#            iᵣj = filter(((i,j),)->i==_iᵣ&&i!=j,L)
-#            if !(isempty(jiᵣ) && isempty(iᵣj))
-#                c = JuMP.@constraint(
-#                    pm.model,
-#                    sum(f[(k,j,i)] for (j,i) in jiᵣ) -
-#                    sum(f[(k,i,j)] for (i,j) in iᵣj)
-#                    ==
-#                    -1.0
-#                )
-#            end
-#        end
+    for k in filter(kk->kk∉iᵣ,N)
+        # Eq. (3)
+        for _iᵣ in iᵣ
+           jiᵣ = filter(((j,i),)->i==_iᵣ&&i!=j,L)
+           iᵣj = filter(((i,j),)->i==_iᵣ&&i!=j,L)
+           if !(isempty(jiᵣ) && isempty(iᵣj))
+               c = JuMP.@constraint(
+                    pm.model,
+                    sum(f[(k,j,i)] for (j,i) in jiᵣ) -
+                    sum(f[(k,i,j)] for (i,j) in iᵣj)
+                    ==
+                    -1.0
+                )
+            end
+        end
 
         # Eq. (4)
-#        jk = filter(((j,i),)->i==k&&i!=j,L′)
-#        kj = filter(((i,j),)->i==k&&i!=j,L′)
-#        if !(isempty(jk) && isempty(kj))
-#            c = JuMP.@constraint(
-#                pm.model,
-#                sum(f[(k,j,k)] for (j,i) in jk) -
-#                sum(f[(k,k,j)] for (i,j) in kj)
-#                ==
-#                1.0
-#            )
-#        end
+        jk = filter(((j,i),)->i==k&&i!=j,L′)
+        kj = filter(((i,j),)->i==k&&i!=j,L′)
+        if !(isempty(jk) && isempty(kj))
+            c = JuMP.@constraint(
+                   pm.model,
+                   sum(f[(k,j,k)] for (j,i) in jk) -
+                   sum(f[(k,k,j)] for (i,j) in kj)
+                   ==
+                   1.0
+               )
+           end
 
         # Eq. (5)
-#        for i in filter(kk->kk∉iᵣ&&kk!=k,N)
-#            ji = filter(((j,ii),)->ii==i&&ii!=j,L′)
-#            ij = filter(((ii,j),)->ii==i&&ii!=j,L′)
-#            if !(isempty(ji) && isempty(ij))
-#                c = JuMP.@constraint(
-#                    pm.model,
-#                    sum(f[(k,j,i)] for (j,ii) in ji) -
-#                    sum(f[(k,i,j)] for (ii,j) in ij)
-#                    ==
-#                    0.0
-#                )
-#            end
-#        end
+        for i in filter(kk->kk∉iᵣ&&kk!=k,N)
+            ji = filter(((j,ii),)->ii==i&&ii!=j,L′)
+            ij = filter(((ii,j),)->ii==i&&ii!=j,L′)
+            if !(isempty(ji) && isempty(ij))
+                c = JuMP.@constraint(
+                    pm.model,
+                    sum(f[(k,j,i)] for (j,ii) in ji) -
+                    sum(f[(k,i,j)] for (ii,j) in ij)
+                    ==
+                    0.0
+                )
+            end
+        end
 
         # Eq. (6)
-#        for (i,j) in L
-#            JuMP.@constraint(pm.model, f[(k,i,j)] >= 0)
-#            JuMP.@constraint(pm.model, f[(k,i,j)] <= λ[(i,j)])
-#            JuMP.@constraint(pm.model, f[(k,j,i)] >= 0)
-#            JuMP.@constraint(pm.model, f[(k,j,i)] <= λ[(j,i)])
-#        end
-#    end
+        for (i,j) in L
+            JuMP.@constraint(pm.model, f[(k,i,j)] >= 0)
+            JuMP.@constraint(pm.model, f[(k,i,j)] <= λ[(i,j)])
+            JuMP.@constraint(pm.model, f[(k,j,i)] >= 0)
+            JuMP.@constraint(pm.model, f[(k,j,i)] <= λ[(j,i)])
+        end
+    end
 
     # Eq. (7)
-#    JuMP.@constraint(pm.model, sum((λ[(i,j)] + λ[(j,i)]) for (i,j) in L) == length(N) - 1)
+    JuMP.@constraint(pm.model, sum((λ[(i,j)] + λ[(j,i)]) for (i,j) in L) == length(N) - 1)
 
     # Connect λ and β, map β back to α, over only real switches (L₀)
-#    for (i,j) in L₀
+    for (i,j) in L₀
         # Eq. (8)
-#        JuMP.@constraint(pm.model, λ[(i,j)] + λ[(j,i)] == β[(i,j)])
+        JuMP.@constraint(pm.model, λ[(i,j)] + λ[(j,i)] == β[(i,j)])
 
         # Eq. (2)
-#        JuMP.@constraint(pm.model, α[(i,j)] <= β[(i,j)])
-#    end
+        JuMP.@constraint(pm.model, α[(i,j)] <= β[(i,j)])
+    end
 end
 
 
