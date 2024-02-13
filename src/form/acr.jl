@@ -367,10 +367,6 @@ function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.AbstractUnba
     for (idx, (fc, tc)) in enumerate(zip(f_connections, t_connections))
         JuMP.@NLconstraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) <=  (vmax[idx]^2-vmin[idx]^2) * (1-state))
         JuMP.@NLconstraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) >= -(vmax[idx]^2-vmin[idx]^2) * (1-state))
-
-        # Indicator constraint version, for reference
-        # JuMP.@constraint(pm.model, state => {vr_fr[fc] == vr_to[tc]})
-        # JuMP.@constraint(pm.model, state => {vi_fr[fc] == vi_to[tc]})
     end
 end
 

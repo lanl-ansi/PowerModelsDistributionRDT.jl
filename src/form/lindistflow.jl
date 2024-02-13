@@ -27,8 +27,5 @@ function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.LPUBFDiagMod
     for (idx, (fc, tc)) in enumerate(zip(f_connections, t_connections))
         JuMP.@constraint(pm.model, w_fr[fc] - w_to[tc] <=  vmax[idx].^2 * (1-z))
         JuMP.@constraint(pm.model, w_fr[fc] - w_to[tc] >= -vmax[idx].^2 * (1-z))
-
-        # Indicator constraint version, for reference
-        # JuMP.@constraint(pm.model, z => {w_fr[fc] == w_to[tc]})
     end
 end

@@ -10,7 +10,6 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
     variable_xe(pm); # 1d x_e variables
     variable_ue(pm); # 1d u_e variables
 
-    # TODO revisit which variables are relaxed
     for n in _IM.nw_ids(pm, _PMD.pmd_it_sym)
         _PMD.variable_mc_bus_voltage(pm; nw=n) # constraint 2e, V variables
         _PMD.variable_mc_branch_power(pm; nw=n); # p_e, q_e variables
@@ -28,15 +27,12 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         _PMD.variable_mc_storage_indicator(pm; nw=n, relax=true) # status variables for storage (z)
         _PMD.variable_mc_storage_power_mi_on_off(pm; nw=n, relax=true) # all the variables associated with storage power/current - that can be forced to 0 with the stoage indicator variable
 
-#        variable_branch_be(pm) # b_e variables
 
          variable_xe_s(pm; nw=n, relax=false) # x_e variables - discrete because we assume new edges all have switches on them
-#         variable_ze_s(pm; nw=n) # z_e variables - may not need because switches are distinct objects now
          variable_he_s(pm; nw=n, relax=true) # h_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
          variable_ue_s(pm; nw=n, relax=true) # u_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
          _PMONM.variable_switch_state(pm; nw=n) # t_e variables
          variable_mc_switch_inline_ne_state(pm; nw=n) # t_e variables
-#        variable_ye_s(pm; nw=n) # # y_e variables
 
         for i in _PMD.ids(pm, n, :gen_ne)
             constraint_ue(pm, i; nw=n) # constraint 1b for u variables
@@ -53,9 +49,6 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
         for i in _PMD.ids(pm, n, :branch_harden)
             constraint_he(pm, i; nw=n) # constraint 1b for h variables
         end
-
-#        constraint_switch(pm; nw=n); # constraint 6a
-#        constraint_active_line(pm; nw=n); # constraint 6b
 
         _PMD.constraint_mc_model_voltage(pm; nw=n);   # Some forms of the power flow equations have special constraints to link voltages together.  Most power flow models don't use this
 
@@ -148,9 +141,9 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             _PMD.constraint_mc_storage_thermal_limit(pm, i; nw=n)
         end
 
-        constraint_radial_topology_ne(pm; nw=n) # constraint XXXXX
+        constraint_radial_topology_ne(pm; nw=n) # constraints 6
 
-        # need to add constraints on inverters and energizing loads
+        # TODO add constraints on inverters and energizing?
 
     end
 

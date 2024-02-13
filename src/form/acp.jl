@@ -391,10 +391,6 @@ function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.AbstractUnba
 
         JuMP.@constraint(pm.model, va_fr[fc] - va_to[tc] <=  (angmax[idx]-angmin[idx]) * (1-state))
         JuMP.@constraint(pm.model, va_fr[fc] - va_to[tc] >= -(angmax[idx]-angmin[idx]) * (1-state))
-
-        # Indicator constraint version, for reference
-        # JuMP.@constraint(pm.model, state => {vm_fr[fc] == vm_to[tc]})
-        # JuMP.@constraint(pm.model, state => {va_fr[fc] == va_to[tc]})
     end
 end
 

@@ -178,28 +178,6 @@ function variable_ue_s(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=_PMD.nw_id
 end
 
 
-#function variable_he_s(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)
-#    _PMs.var(pm, nw)[:he_d_s] = JuMP.@variable(pm.model,
-#    [(l,i,j) in _PMs.ref(pm, nw, :arcs_damaged)],
-#    base_name = "$(nw)_branch_he_damaged_s",
-#    binary = true,
-#    start = 0)
-#    _PMs.var(pm, nw)[:he_n_s] = JuMP.@variable(pm.model,
-#    [(l,i,j) in _PMs.ref(pm, nw, :arcs_new)],
-#    base_name = "$(nw)_branch_he_new_s",
-#    binary = true,
-#    start = 0)
-#end
-
-#function variable_ye_s(pm::_PMs.AbstractPowerModel; nw::Int=pm.cnw)
-#    _PMs.var(pm, nw)[:ye_s] = JuMP.@variable(pm.model,
-#    [(l,i,j) in _PMs.ref(pm, nw, :arcs)],
-#    base_name = "$(nw)_branch_ye_s",
-#    binary = true,
-#    start = 0)
-#end
-
-
 "switch_inline_ne state (open/close) variables"
 function variable_mc_switch_inline_ne_state(pm::_PMD.AbstractUnbalancedPowerModel; nw::Int=nw_id_default, report::Bool=true, relax::Bool=false)
     if relax

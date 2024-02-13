@@ -9,6 +9,5 @@ function parse_file(file::String; kwargs...)
     elseif filetype == "json"
         pmd_data = parse_json(io)
     end
-    # add_load_weights!(pmd_data)
     return pmd_data
 end

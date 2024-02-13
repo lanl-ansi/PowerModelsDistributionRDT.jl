@@ -223,8 +223,6 @@ function constraint_radial_topology_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw
         end
     end
 
-#NOTE TO SELF - I THINK ALL I NEED TO DO IS DEFINE ALPHA ACROSS THE SPACE OF SWITCH STATES, INLINE SWITCH STATES, HARDENING OPTION, AND EXPANSION EDGES
-
     bus_block_map = _PMD.ref(pm, nw, :bus_block_map)
     branches = _PMD.ref(pm, nw, :branch)
 
@@ -287,9 +285,8 @@ function constraint_radial_topology_ne(pm::_PMD.AbstractUnbalancedPowerModel, nw
         end
     end
 
-    for α in values(_PMD.var(pm, nw, :alpha))
-        c = JuMP.@constraint(pm.model, α <= 1)
-        println(c)
+    for ((i,j), α) in _PMD.var(pm, nw, :alpha)
+        JuMP.@constraint(pm.model, α <= 1)
     end
 
     f = _PMD.var(pm, nw, :f)
@@ -398,10 +395,6 @@ function constraint_mc_switch_inline_ne_power_open_close(pm::_PMD.AbstractUnbala
         JuMP.@constraint(pm.model, psw[c] >= -rating[idx] * state)
         JuMP.@constraint(pm.model, qsw[c] <=  rating[idx] * state)
         JuMP.@constraint(pm.model, qsw[c] >= -rating[idx] * state)
-
-        # Indicator constraint version, for reference
-        # JuMP.@constraint(pm.model, !state => {psw[c] == 0.0})
-        # JuMP.@constraint(pm.model, !state => {qsw[c] == 0.0})
     end
 end
 
