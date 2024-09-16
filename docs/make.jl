@@ -1,24 +1,26 @@
 using Documenter
 using PowerModelsDistributionRDT
 
+
+# build documents
 makedocs(
-    modules = [PowerModelsDistributionRDT],
-    format = Documenter.HTML(
-        analytics = "",
-        mathengine = Documenter.MathJax(),
+    format=Documenter.HTML(
+        analytics="",
+        mathengine=Documenter.MathJax(),
         prettyurls=false,
-        collapselevel=1,
+        collapselevel=2,
     ),
-    strict=false,
-    sitename = "PowerModelsDistributionRDT",
-    authors = "Russell Bent, Jose Tabarez, David M Fobes, and contributors",
+    warnonly=true,
+    sitename="PowerModelsDistributionRDT",
+    authors="Russell Bent, Jose Tabarez, David M Fobes, and contributors",
+    pages=pages
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
 # See "Hosting Documentation" and deploydocs() in the Documenter manual
 # for more information.
 deploydocs(
-    repo = "github.com/lanl-ansi/PowerModelsDistributionRDT.jl.git",
-    push_preview = false,
-    devbranch = "main",
+    repo="github.com/lanl-ansi/PowerModelsDistributionRDT.jl.git",
+    push_preview=false,
+    devbranch="main",
 )
