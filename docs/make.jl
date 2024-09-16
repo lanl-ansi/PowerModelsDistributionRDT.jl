@@ -13,7 +13,6 @@ makedocs(
     warnonly=true,
     sitename="PowerModelsDistributionRDT",
     authors="Russell Bent, Jose Tabarez, David M Fobes, and contributors",
-    pages=pages
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
