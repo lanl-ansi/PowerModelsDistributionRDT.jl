@@ -8,7 +8,7 @@ math```
 ```
 """
 function constraint_mc_switch_inline_ne_thermal_limit(pm::_PMD.AbstractUnbalancedActivePowerModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, rating::Vector{<:Real})::Nothing
-    psw = _PMD.var(pm, nw, :psw_inline_ne, f_idx)
+    psw = var(pm, nw, :psw_inline_ne, f_idx)
 
     mu_sm_fr = JuMP.ConstraintRef[]
     for (idx, c) in enumerate(f_connections)
@@ -18,7 +18,7 @@ function constraint_mc_switch_inline_ne_thermal_limit(pm::_PMD.AbstractUnbalance
         end
     end
 
-    _PMD.con(pm, nw, :mu_sm_switch_inline_ne)[f_idx] = mu_sm_fr
+    con(pm, nw, :mu_sm_switch_inline_ne)[f_idx] = mu_sm_fr
 
     nothing
 end

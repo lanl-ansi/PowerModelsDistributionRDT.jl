@@ -7,15 +7,10 @@ const _IM = InfrastructureModels
 
 import Memento
 
-import PowerModels
-const _PM = PowerModels
-
-import PowerModelsDistribution
-const _PMD = PowerModelsDistribution
+import PowerModelsDistribution as _PMD
 
 # Suppress warnings during testing.
 Memento.setlevel!(Memento.getlogger(InfrastructureModels), "error")
-PowerModels.logger_config!("error")
 
 import Ipopt
 import SCS
@@ -34,8 +29,8 @@ using Test
 
 _PMD.silence!()
 
-ipopt_solver = JuMP.optimizer_with_attributes(Ipopt.Optimizer,"print_level" => 0,"sb" => "yes","max_iter" => 1000,"acceptable_tol" => 1.0e-2)
-juniper_solver = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt_solver,"log_levels" => [],)
+ipopt_solver = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0, "sb" => "yes", "max_iter" => 1000, "acceptable_tol" => 1.0e-2)
+juniper_solver = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt_solver, "log_levels" => [],)
 highs_solver = JuMP.optimizer_with_attributes(HiGHS.Optimizer)
 scip_solver = JuMP.optimizer_with_attributes(SCIP.Optimizer)
 

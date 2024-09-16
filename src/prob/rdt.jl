@@ -1,74 +1,74 @@
 
 function solve_rdt(data::Dict{String,Any}, model_type, solver; kwargs...)
-    return _PMD.solve_mc_model(data, model_type, solver, build_mc_rdt; multinetwork=true, ref_extensions=[ref_add_rdt!], eng2math_extensions=[transform_switch_inline_ne!,transform_switch_inline!], kwargs...)
+    return _PMD.solve_mc_model(data, model_type, solver, build_mc_rdt; multinetwork=true, ref_extensions=[ref_add_rdt!], eng2math_extensions=[transform_switch_inline_ne!, transform_switch_inline!], kwargs...)
 end
 
 # formulation and equation numbers from this paper https://pubsonline.informs.org/doi/abs/10.1287/ijoc.2019.0899
-function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
-    variable_he(pm); # 1d h_e variables
-    variable_te(pm; relax=true); # 1d t_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
-    variable_xe(pm); # 1d x_e variables
-    variable_ue(pm); # 1d u_e variables
+function build_mc_rdt(pm::AbstractUnbalancedPowerModel)
+    variable_he(pm) # 1d h_e variables
+    variable_te(pm; relax=true) # 1d t_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
+    variable_xe(pm) # 1d x_e variables
+    variable_ue(pm) # 1d u_e variables
 
-    for n in _IM.nw_ids(pm, _PMD.pmd_it_sym)
+    for n in _IM.nw_ids(pm, pmd_it_sym)
         _PMD.variable_mc_bus_voltage(pm; nw=n) # constraint 2e, V variables
-        _PMD.variable_mc_branch_power(pm; nw=n); # p_e, q_e variables
-         variable_mc_branch_ne_power(pm; nw=n); # p_e, q_e variables
-        _PMD.variable_mc_transformer_power(pm; nw=n); # p_e, q_e variables
+        _PMD.variable_mc_branch_power(pm; nw=n) # p_e, q_e variables
+        variable_mc_branch_ne_power(pm; nw=n) # p_e, q_e variables
+        _PMD.variable_mc_transformer_power(pm; nw=n) # p_e, q_e variables
         variable_mc_transformer_ne_power(pm; nw=n) # p_e, q_e variables
-        _PMD.variable_mc_switch_power(pm;nw=n) # p_e, q_e variables
-        variable_mc_switch_inline_ne_power(pm;nw=n) # p_e, q_e variables
-        _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true); # status variable for generators (z)
-        variable_mc_gen_ne_indicator(pm; nw=n, relax=true);  # status variable for generators (z)
-        _PMD.variable_mc_generator_power_on_off(pm; nw=n); # pg, qg variables for generators
-        variable_mc_generator_ne_power_on_off(pm; nw=n);  # pg, qg variables for generators
-        _PMD.variable_mc_load_indicator(pm; nw=n, relax=true); # status variables for loads (z), creates pd and qd expressions as representative of those variables that model constraint 4b
-        _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true); # status variables for shunts (z)
+        _PMD.variable_mc_switch_power(pm; nw=n) # p_e, q_e variables
+        variable_mc_switch_inline_ne_power(pm; nw=n) # p_e, q_e variables
+        _PMD.variable_mc_gen_indicator(pm; nw=n, relax=true) # status variable for generators (z)
+        variable_mc_gen_ne_indicator(pm; nw=n, relax=true)  # status variable for generators (z)
+        _PMD.variable_mc_generator_power_on_off(pm; nw=n) # pg, qg variables for generators
+        variable_mc_generator_ne_power_on_off(pm; nw=n)  # pg, qg variables for generators
+        _PMD.variable_mc_load_indicator(pm; nw=n, relax=true) # status variables for loads (z), creates pd and qd expressions as representative of those variables that model constraint 4b
+        _PMD.variable_mc_shunt_indicator(pm; nw=n, relax=true) # status variables for shunts (z)
         _PMD.variable_mc_storage_indicator(pm; nw=n, relax=true) # status variables for storage (z)
         _PMD.variable_mc_storage_power_mi_on_off(pm; nw=n, relax=true) # all the variables associated with storage power/current - that can be forced to 0 with the stoage indicator variable
 
 
-         variable_xe_s(pm; nw=n, relax=false) # x_e variables - discrete because we assume new edges all have switches on them
-         variable_he_s(pm; nw=n, relax=true) # h_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
-         variable_ue_s(pm; nw=n, relax=true) # u_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
-         _PMONM.variable_switch_state(pm; nw=n) # t_e variables
-         variable_mc_switch_inline_ne_state(pm; nw=n) # t_e variables
+        variable_xe_s(pm; nw=n, relax=false) # x_e variables - discrete because we assume new edges all have switches on them
+        variable_he_s(pm; nw=n, relax=true) # h_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
+        variable_ue_s(pm; nw=n, relax=true) # u_e variables - can be continous because the combination of the objective and constraint 1b will force them to 0 or 1
+        _PMONM.variable_switch_state(pm; nw=n) # t_e variables
+        variable_mc_switch_inline_ne_state(pm; nw=n) # t_e variables
 
-        for i in _PMD.ids(pm, n, :gen_ne)
+        for i in ids(pm, n, :gen_ne)
             constraint_ue(pm, i; nw=n) # constraint 1b for u variables
         end
 
-        for i in _PMD.ids(pm, n, :branch_ne)
+        for i in ids(pm, n, :branch_ne)
             constraint_xe(pm, i; nw=n) # constraint 1b for x variables
         end
 
-        for i in _PMD.ids(pm, n, :switch_inline_ne)
+        for i in ids(pm, n, :switch_inline_ne)
             constraint_te(pm, i; nw=n) # constraint 1b for t variables
         end
 
-        for i in _PMD.ids(pm, n, :branch_harden)
+        for i in ids(pm, n, :branch_harden)
             constraint_he(pm, i; nw=n) # constraint 1b for h variables
         end
 
-        _PMD.constraint_mc_model_voltage(pm; nw=n);   # Some forms of the power flow equations have special constraints to link voltages together.  Most power flow models don't use this
+        _PMD.constraint_mc_model_voltage(pm; nw=n)   # Some forms of the power flow equations have special constraints to link voltages together.  Most power flow models don't use this
 
-        for i in _PMD.ids(pm, n, :ref_buses)
+        for i in ids(pm, n, :ref_buses)
             _PMD.constraint_mc_theta_ref(pm, i; nw=n) # slack bus constraint
         end
 
-        for i in _PMD.ids(pm, n, :gen)
+        for i in ids(pm, n, :gen)
             _PMD.constraint_mc_gen_power_on_off(pm, i; nw=n) # constraint 4a
         end
 
-        for i in _PMD.ids(pm, n, :gen_ne)
+        for i in ids(pm, n, :gen_ne)
             constraint_mc_gen_power_ne(pm, i; nw=n) # constraint 4a for new generators
         end
 
-        for i in _PMD.ids(pm, n, :bus)
+        for i in ids(pm, n, :bus)
             constraint_mc_power_balance_shed_ne(pm, i; nw=n) # constraint 2c
         end
 
-        for i in _PMD.ref(pm, n, :undamaged_branch)
+        for i in ref(pm, n, :undamaged_branch)
             _PMD.constraint_mc_ohms_yt_from(pm, i; nw=n) #constraint 2a
             _PMD.constraint_mc_ohms_yt_to(pm, i; nw=n) #constraint 2a
 
@@ -83,7 +83,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             # constraint 2b is implict
         end
 
-        for i in _PMD.ref(pm, n, :damaged_branch) # need to break this out into damaged and un damaged branches
+        for i in ref(pm, n, :damaged_branch) # need to break this out into damaged and un damaged branches
             constraint_mc_ohms_yt_from_damaged(pm, i; nw=n) #constraint 2a
             constraint_mc_ohms_yt_to_damaged(pm, i; nw=n) #constraint 2a
 
@@ -98,7 +98,7 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             # constraint 2b is implict
         end
 
-        for i in _PMD.ids(pm, n, :branch_ne)
+        for i in ids(pm, n, :branch_ne)
             constraint_mc_ohms_yt_from_ne(pm, i; nw=n) #constraint 2a
             constraint_mc_ohms_yt_to_ne(pm, i; nw=n) #constraint 2a
 
@@ -113,27 +113,27 @@ function build_mc_rdt(pm::_PMD.AbstractUnbalancedPowerModel)
             # constraint 2b is implict
         end
 
-        for i in _PMD.ids(pm, n, :transformer)
+        for i in ids(pm, n, :transformer)
             _PMD.constraint_mc_transformer_power(pm, i; nw=n) # not in paper, but fine to include
         end
 
         constraint_critical_load(pm; nw=n) # constraint 4c
         constraint_total_load(pm; nw=n) # anaologue to constraint 4d
 
-        for i in _PMD.ids(pm, n, :switch)
+        for i in ids(pm, n, :switch)
             _PMONM.constraint_mc_switch_state_open_close(pm, i; nw=n)
             _PMD.constraint_mc_switch_thermal_limit(pm, i; nw=n)
             _PMD.constraint_mc_switch_ampacity(pm, i; nw=n)
         end
 
-        for i in _PMD.ids(pm, n, :switch_inline_ne)
+        for i in ids(pm, n, :switch_inline_ne)
             constraint_mc_switch_inline_ne_state_open_close(pm, i; nw=n)
             constraint_mc_switch_inline_ne_thermal_limit(pm, i; nw=n)
             constraint_mc_switch_inline_ne_ampacity(pm, i; nw=n)
         end
 
 
-        for i in _PMD.ids(pm, n, :storage)
+        for i in ids(pm, n, :storage)
             _PMD.constraint_storage_state(pm, i; nw=n)
             _PMD.constraint_storage_complementarity_mi(pm, i; nw=n)
             _PMD.constraint_mc_storage_on_off(pm, i; nw=n)

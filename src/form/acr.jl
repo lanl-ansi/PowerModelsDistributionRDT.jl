@@ -6,33 +6,33 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
                                              bus_shunts::Vector{Tuple{Int,Vector{Int}}}, bus_arcs_ne::Vector{Tuple{Tuple{Int,Int,Int},Vector{Int}}},
                                              bus_arcs_sw_ne::Vector{Tuple{Tuple{Int,Int,Int},Vector{Int}}}, bus_arcs_trans_ne::Vector{Tuple{Tuple{Int,Int,Int},Vector{Int}}},
                                              bus_gens_ne::Vector{Tuple{Int,Vector{Int}}})
-    vr     = _PMD.var(pm, nw, :vr, i)
-    vi     = _PMD.var(pm, nw, :vi, i)
-    p      = get(_PMD.var(pm, nw), :p,      Dict()); _PMD._check_var_keys(p,   bus_arcs,          "active power",   "branch")
-    q      = get(_PMD.var(pm, nw), :q,      Dict()); _PMD._check_var_keys(q,   bus_arcs,          "reactive power", "branch")
-    p_ne   = get(_PMD.var(pm, nw), :p_ne,   Dict()); _PMD._check_var_keys(p,   bus_arcs_ne,       "active power",   "branch_ne")
-    q_ne   = get(_PMD.var(pm, nw), :q_ne,   Dict()); _PMD._check_var_keys(q,   bus_arcs_ne,       "reactive power", "branch_ne")
-    pg     = get(_PMD.var(pm, nw), :pg,     Dict()); _PMD._check_var_keys(pg,  bus_gens,          "active power",   "generator")
-    qg     = get(_PMD.var(pm, nw), :qg,     Dict()); _PMD._check_var_keys(qg,  bus_gens,          "reactive power", "generator")
-    pg_ne  = get(_PMD.var(pm, nw), :pg_ne,  Dict()); _PMD._check_var_keys(pg,  bus_gens_ne,       "active power",   "generator_ne")
-    qg_ne  = get(_PMD.var(pm, nw), :qg_ne,  Dict()); _PMD._check_var_keys(qg,  bus_gens_ne,       "reactive power", "generator_ne")
-    ps     = get(_PMD.var(pm, nw), :ps,     Dict()); _PMD._check_var_keys(ps,  bus_storage,       "active power",   "storage")
-    qs     = get(_PMD.var(pm, nw), :qs,     Dict()); _PMD._check_var_keys(qs,  bus_storage,       "reactive power", "storage")
-    psw    = get(_PMD.var(pm, nw), :psw,    Dict()); _PMD._check_var_keys(psw, bus_arcs_sw,       "active power",   "switch")
-    qsw    = get(_PMD.var(pm, nw), :qsw,    Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw,       "reactive power", "switch")
-    psw_ne = get(_PMD.var(pm, nw), :psw_inline_ne, Dict()); _PMD._check_var_keys(psw, bus_arcs_sw_ne,    "active power",   "switch_inline_ne")
-    qsw_ne = get(_PMD.var(pm, nw), :qsw_inline_ne, Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw_ne,    "reactive power", "switch_inline_ne")
-    pt     = get(_PMD.var(pm, nw), :pt,     Dict()); _PMD._check_var_keys(pt,  bus_arcs_trans,    "active power",   "transformer")
-    qt     = get(_PMD.var(pm, nw), :qt,     Dict()); _PMD._check_var_keys(qt,  bus_arcs_trans,    "reactive power", "transformer")
-    pt_ne  = get(_PMD.var(pm, nw), :pt_ne,  Dict()); _PMD._check_var_keys(pt,  bus_arcs_trans_ne, "active power",   "transformer_ne")
-    qt_ne  = get(_PMD.var(pm, nw), :qt_ne,  Dict()); _PMD._check_var_keys(qt,  bus_arcs_trans_ne, "reactive power", "transformer_ne")
+    vr     = var(pm, nw, :vr, i)
+    vi     = var(pm, nw, :vi, i)
+    p      = get(var(pm, nw), :p,      Dict()); _PMD._check_var_keys(p,   bus_arcs,          "active power",   "branch")
+    q      = get(var(pm, nw), :q,      Dict()); _PMD._check_var_keys(q,   bus_arcs,          "reactive power", "branch")
+    p_ne   = get(var(pm, nw), :p_ne,   Dict()); _PMD._check_var_keys(p,   bus_arcs_ne,       "active power",   "branch_ne")
+    q_ne   = get(var(pm, nw), :q_ne,   Dict()); _PMD._check_var_keys(q,   bus_arcs_ne,       "reactive power", "branch_ne")
+    pg     = get(var(pm, nw), :pg,     Dict()); _PMD._check_var_keys(pg,  bus_gens,          "active power",   "generator")
+    qg     = get(var(pm, nw), :qg,     Dict()); _PMD._check_var_keys(qg,  bus_gens,          "reactive power", "generator")
+    pg_ne  = get(var(pm, nw), :pg_ne,  Dict()); _PMD._check_var_keys(pg,  bus_gens_ne,       "active power",   "generator_ne")
+    qg_ne  = get(var(pm, nw), :qg_ne,  Dict()); _PMD._check_var_keys(qg,  bus_gens_ne,       "reactive power", "generator_ne")
+    ps     = get(var(pm, nw), :ps,     Dict()); _PMD._check_var_keys(ps,  bus_storage,       "active power",   "storage")
+    qs     = get(var(pm, nw), :qs,     Dict()); _PMD._check_var_keys(qs,  bus_storage,       "reactive power", "storage")
+    psw    = get(var(pm, nw), :psw,    Dict()); _PMD._check_var_keys(psw, bus_arcs_sw,       "active power",   "switch")
+    qsw    = get(var(pm, nw), :qsw,    Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw,       "reactive power", "switch")
+    psw_ne = get(var(pm, nw), :psw_inline_ne, Dict()); _PMD._check_var_keys(psw, bus_arcs_sw_ne,    "active power",   "switch_inline_ne")
+    qsw_ne = get(var(pm, nw), :qsw_inline_ne, Dict()); _PMD._check_var_keys(qsw, bus_arcs_sw_ne,    "reactive power", "switch_inline_ne")
+    pt     = get(var(pm, nw), :pt,     Dict()); _PMD._check_var_keys(pt,  bus_arcs_trans,    "active power",   "transformer")
+    qt     = get(var(pm, nw), :qt,     Dict()); _PMD._check_var_keys(qt,  bus_arcs_trans,    "reactive power", "transformer")
+    pt_ne  = get(var(pm, nw), :pt_ne,  Dict()); _PMD._check_var_keys(pt,  bus_arcs_trans_ne, "active power",   "transformer_ne")
+    qt_ne  = get(var(pm, nw), :qt_ne,  Dict()); _PMD._check_var_keys(qt,  bus_arcs_trans_ne, "reactive power", "transformer_ne")
 
 
-    zd = _PMD.var(pm, nw, :z_demand)
-    z_shunt  = _PMD.var(pm, nw, :z_shunt)  # TODO add support for z_shunt in power balance shed
-    zg = haskey(_PMD.var(pm, nw), :z_gen) ? _PMD.var(pm, nw, :z_gen) : Dict(i => 1.0 for i in _PMD.ids(pm, nw, :gen))
-    zg_ne = haskey(_PMD.var(pm, nw), :z_gen_ne) ? _PMD.var(pm, nw, :z_gen_ne) : Dict(i => 1.0 for i in _PMD.ids(pm, nw, :gen_ne))
-    zs = haskey(_PMD.var(pm, nw), :z_storage) ? _PMD.var(pm, nw, :z_storage) : Dict(i => 1.0 for i in _PMD.ids(pm, nw, :storage))
+    zd = var(pm, nw, :z_demand)
+    z_shunt  = var(pm, nw, :z_shunt)  # TODO add support for z_shunt in power balance shed
+    zg = haskey(var(pm, nw), :z_gen) ? var(pm, nw, :z_gen) : Dict(i => 1.0 for i in ids(pm, nw, :gen))
+    zg_ne = haskey(var(pm, nw), :z_gen_ne) ? var(pm, nw, :z_gen_ne) : Dict(i => 1.0 for i in ids(pm, nw, :gen_ne))
+    zs = haskey(var(pm, nw), :z_storage) ? var(pm, nw, :z_storage) : Dict(i => 1.0 for i in ids(pm, nw, :storage))
 
     Gt, Bt = _PMD._build_bus_shunt_matrices(pm, nw, terminals, bus_shunts)
 
@@ -49,7 +49,7 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
             + sum(pt[a][t] for (a, conns) in bus_arcs_trans if t in conns)
             - sum(pg[g][t]*zg[g] for (g, conns) in bus_gens if t in conns)
             + sum(ps[s][t]*zs[s] for (s, conns) in bus_storage if t in conns)
-            + sum(_PMD.ref(pm, nw, :load, d, "pd")[findfirst(isequal(t), conns)]*zd[d] for (d, conns) in bus_loads if t in conns)
+            + sum(ref(pm, nw, :load, d, "pd")[findfirst(isequal(t), conns)]*zd[d] for (d, conns) in bus_loads if t in conns)
             + (+vr[t] * sum(Gt[idx,jdx]*vr[u]-Bt[idx,jdx]*vi[u] for (jdx,u) in ungrounded_terminals)
                +vi[t] * sum(Gt[idx,jdx]*vi[u]+Bt[idx,jdx]*vr[u] for (jdx,u) in ungrounded_terminals))
             + sum( p_ne[a][t] for (a, conns) in bus_arcs_ne if t in conns)
@@ -67,7 +67,7 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
             + sum( qt[a][t] for (a, conns) in bus_arcs_trans if t in conns)
             - sum(qg[g][t]*zg[g] for (g, conns) in bus_gens if t in conns)
             + sum(qs[s][t]*zs[s] for (s, conns) in bus_storage if t in conns)
-            + sum(_PMD.ref(pm, nw, :load, d, "qd")[findfirst(isequal(t), conns)]*zd[d] for (d, conns) in bus_loads if t in conns)
+            + sum(ref(pm, nw, :load, d, "qd")[findfirst(isequal(t), conns)]*zd[d] for (d, conns) in bus_loads if t in conns)
             + (-vr[t] * sum(Gt[idx,jdx]*vi[u]+Bt[idx,jdx]*vr[u] for (jdx,u) in ungrounded_terminals)
                +vi[t] * sum(Gt[idx,jdx]*vr[u]-Bt[idx,jdx]*vi[u] for (jdx,u) in ungrounded_terminals))
             + sum(q_ne[a][t] for (a, conns) in bus_arcs_ne if t in conns)
@@ -85,8 +85,8 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
     con(pm, nw, :lam_kcl_i)[i] = cstr_q
 
     if _IM.report_duals(pm)
-        _PMD.sol(pm, nw, :bus, i)[:lam_kcl_r] = cstr_p
-        _PMD.sol(pm, nw, :bus, i)[:lam_kcl_i] = cstr_q
+        sol(pm, nw, :bus, i)[:lam_kcl_r] = cstr_p
+        sol(pm, nw, :bus, i)[:lam_kcl_i] = cstr_q
     end
 end
 
@@ -103,17 +103,17 @@ p_{fr}^2 + q_{fr}^2 \leq (vr_{fr}^2 + vi_{fr}^2) i_{max}^2 * he_s
 ```
 """
 function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_fr = [_PMD.var(pm, nw, :p, f_idx)[c] for c in f_connections]
-    q_fr = [_PMD.var(pm, nw, :q, f_idx)[c] for c in f_connections]
-    vr_fr = [_PMD.var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
-    vi_fr = [_PMD.var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
-    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+    p_fr = [var(pm, nw, :p, f_idx)[c] for c in f_connections]
+    q_fr = [var(pm, nw, :q, f_idx)[c] for c in f_connections]
+    vr_fr = [var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
+    vi_fr = [var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
+    he_s  = var(pm, nw, :he_s, f_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    _PMD.con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * he_s) for idx in f_connections]
+    con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * he_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
-        _PMD.sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
+        sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
     end
 
     nothing
@@ -130,17 +130,17 @@ p_{to}^2 + q_{to}^2 \leq (vr_{to}^2 + vi_{to}^2) i_{max}^2 * he_s
 ```
 """
 function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_to = [_PMD.var(pm, nw, :p, t_idx)[c] for c in t_connections]
-    q_to = [_PMD.var(pm, nw, :q, t_idx)[c] for c in t_connections]
-    vr_to = [_PMD.var(pm, nw, :vr, t_idx[2])[c] for c in t_connections]
-    vi_to = [_PMD.var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
-    he_s  = _PMD.var(pm, nw, :he_s, t_idx[1])
+    p_to = [var(pm, nw, :p, t_idx)[c] for c in t_connections]
+    q_to = [var(pm, nw, :q, t_idx)[c] for c in t_connections]
+    vr_to = [var(pm, nw, :vr, t_idx[2])[c] for c in t_connections]
+    vi_to = [var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
+    he_s  = var(pm, nw, :he_s, t_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    _PMD.con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * he_s) for idx in t_connections]
+    con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * he_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
-        _PMD.sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
+        sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
     end
 
     nothing
@@ -157,17 +157,17 @@ p_{fr}^2 + q_{fr}^2 \leq (vr_{fr}^2 + vi_{fr}^2) i_{max}^2 * xe_s
 ```
 """
 function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_fr = [_PMD.var(pm, nw, :p_ne, f_idx)[c] for c in f_connections]
-    q_fr = [_PMD.var(pm, nw, :q_ne, f_idx)[c] for c in f_connections]
-    vr_fr = [_PMD.var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
-    vi_fr = [_PMD.var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
-    xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
+    p_fr = [var(pm, nw, :p_ne, f_idx)[c] for c in f_connections]
+    q_fr = [var(pm, nw, :q_ne, f_idx)[c] for c in f_connections]
+    vr_fr = [var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
+    vi_fr = [var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
+    xe_s  = var(pm, nw, :xe_s, f_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    _PMD.con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * xe_s) for idx in f_connections]
+    con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * xe_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
-        _PMD.sol(pm, nw, :branch_ne, f_idx[1])[:mu_cm_fr_ne] = mu_cm_fr
+        sol(pm, nw, :branch_ne, f_idx[1])[:mu_cm_fr_ne] = mu_cm_fr
     end
 
     nothing
@@ -184,17 +184,17 @@ p_{to}^2 + q_{to}^2 \leq (vr_{to}^2 + vi_{to}^2) i_{max}^2 * he_s
 ```
 """
 function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedRectangularModels, nw::Int, t_idx::Tuple{Int,Int,Int}, t_connections::Vector{Int}, c_rating::Vector{<:Real})::Nothing
-    p_to = [_PMD.var(pm, nw, :p_ne, t_idx)[c] for c in t_connections]
-    q_to = [_PMD.var(pm, nw, :q_ne, t_idx)[c] for c in t_connections]
-    vr_to = [_PMD.var(pm, nw, :vr, t_idx[2])[c] for c in t_connections]
-    vi_to = [_PMD.var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
-    xe_s  = _PMD.var(pm, nw, :xe_s, t_idx[1])
+    p_to = [var(pm, nw, :p_ne, t_idx)[c] for c in t_connections]
+    q_to = [var(pm, nw, :q_ne, t_idx)[c] for c in t_connections]
+    vr_to = [var(pm, nw, :vr, t_idx[2])[c] for c in t_connections]
+    vi_to = [var(pm, nw, :vi, t_idx[2])[c] for c in t_connections]
+    xe_s  = var(pm, nw, :xe_s, t_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * xe_s (and use @constraint)
-    _PMD.con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
+    con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
-        _PMD.sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to
+        sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to
     end
 
     nothing
@@ -205,11 +205,11 @@ end
 function constraint_mc_voltage_angle_difference_damaged(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, angmin::Vector{<:Real}, angmax::Vector{<:Real})
     i, f_bus, t_bus = f_idx
 
-    vr_fr = _PMD.var(pm, nw, :vr, f_bus)
-    vi_fr = _PMD.var(pm, nw, :vi, f_bus)
-    vr_to = _PMD.var(pm, nw, :vr, t_bus)
-    vi_to = _PMD.var(pm, nw, :vi, t_bus)
-    he_s  = _PMD.var(pm, nw, :he_s, i)
+    vr_fr = var(pm, nw, :vr, f_bus)
+    vi_fr = var(pm, nw, :vi, f_bus)
+    vr_to = var(pm, nw, :vr, t_bus)
+    vi_to = var(pm, nw, :vi, t_bus)
+    he_s  = var(pm, nw, :he_s, i)
 
     #TODO: A bit lazy, but this is how PowerModels.jl does on_off on phase angle difference constraints.  If we had the absolute maximum voltage angle difference, from bound on the v variables
     for (idx, (fc,tc)) in enumerate(zip(f_connections, t_connections))
@@ -223,11 +223,11 @@ end
 function constraint_mc_voltage_angle_difference_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, f_idx::Tuple{Int,Int,Int}, f_connections::Vector{Int}, t_connections::Vector{Int}, angmin::Vector{<:Real}, angmax::Vector{<:Real})
     i, f_bus, t_bus = f_idx
 
-    vr_fr = _PMD.var(pm, nw, :vr, f_bus)
-    vi_fr = _PMD.var(pm, nw, :vi, f_bus)
-    vr_to = _PMD.var(pm, nw, :vr, t_bus)
-    vi_to = _PMD.var(pm, nw, :vi, t_bus)
-    xe_s  = _PMD.var(pm, nw, :xe_s, i)
+    vr_fr = var(pm, nw, :vr, f_bus)
+    vi_fr = var(pm, nw, :vi, f_bus)
+    vr_to = var(pm, nw, :vr, t_bus)
+    vi_to = var(pm, nw, :vi, t_bus)
+    xe_s  = var(pm, nw, :xe_s, i)
 
     #TODO: A bit lazy, but this is how PowerModels.jl does on_off on phase angle difference constraints.  If we had the absolute maximum voltage angle difference, from bound on the v variables
     for (idx, (fc,tc)) in enumerate(zip(f_connections, t_connections))
@@ -250,7 +250,7 @@ function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedACRModel,
     vr_to = [var(pm, nw, :vr, t_bus)[t] for t in t_connections]
     vi_fr = [var(pm, nw, :vi, f_bus)[t] for t in f_connections]
     vi_to = [var(pm, nw, :vi, t_bus)[t] for t in t_connections]
-    he_s  = _PMD.var(pm, nw, :he_s, f_idx[1])
+    he_s  = var(pm, nw, :he_s, f_idx[1])
 
     con(pm, nw, :ohms_yt)[f_idx] = [
         JuMP.@constraint(pm.model,
@@ -298,7 +298,7 @@ function constraint_mc_ohms_yt_from_ne(pm::_PMD.AbstractUnbalancedACRModel, nw::
     vr_to = [var(pm, nw, :vr, t_bus)[t] for t in t_connections]
     vi_fr = [var(pm, nw, :vi, f_bus)[t] for t in f_connections]
     vi_to = [var(pm, nw, :vi, t_bus)[t] for t in t_connections]
-    xe_s  = _PMD.var(pm, nw, :xe_s, f_idx[1])
+    xe_s  = var(pm, nw, :xe_s, f_idx[1])
 
     con(pm, nw, :ohms_yt)[f_idx] = [
         JuMP.@constraint(pm.model,
@@ -345,13 +345,13 @@ nonlinear switch power on/off constraint for ac-rect form
 ```
 """
 function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.AbstractUnbalancedACRModel, nw::Int, i::Int, f_bus::Int, t_bus::Int, f_connections::Vector{Int}, t_connections::Vector{Int})
-    vr_fr = _PMD.var(pm, nw, :vr, f_bus)
-    vr_to = _PMD.var(pm, nw, :vr, t_bus)
-    vi_fr = _PMD.var(pm, nw, :vi, f_bus)
-    vi_to = _PMD.var(pm, nw, :vi, t_bus)
+    vr_fr = var(pm, nw, :vr, f_bus)
+    vr_to = var(pm, nw, :vr, t_bus)
+    vi_fr = var(pm, nw, :vi, f_bus)
+    vi_to = var(pm, nw, :vi, t_bus)
 
-    f_bus = _PMD.ref(pm, nw, :bus, f_bus)
-    t_bus = _PMD.ref(pm, nw, :bus, t_bus)
+    f_bus = ref(pm, nw, :bus, f_bus)
+    t_bus = ref(pm, nw, :bus, t_bus)
 
     f_vmin = f_bus["vmin"][[findfirst(isequal(c), f_bus["terminals"]) for c in f_connections]]
     t_vmin = t_bus["vmin"][[findfirst(isequal(c), t_bus["terminals"]) for c in t_connections]]
@@ -362,7 +362,7 @@ function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.AbstractUnba
     vmin = max.(fill(0.0, length(f_vmax)), f_vmin, t_vmin)
     vmax = min.(fill(2.0, length(f_vmax)), f_vmax, t_vmax)
 
-    state = _PMD.var(pm, nw, :switch_inline_ne_state, i)
+    state = var(pm, nw, :switch_inline_ne_state, i)
 
     for (idx, (fc, tc)) in enumerate(zip(f_connections, t_connections))
         JuMP.@NLconstraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) <=  (vmax[idx]^2-vmin[idx]^2) * (1-state))
@@ -385,10 +385,10 @@ function constraint_mc_switch_inline_ne_ampacity(pm::_PMD.AbstractUnbalancedRect
     vr_fr = [var(pm, nw, :vr, f_idx[2])[c] for c in f_connections]
     vi_fr = [var(pm, nw, :vi, f_idx[2])[c] for c in f_connections]
 
-    _PMD.con(pm, nw, :mu_cm_switch_inline_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, psw_fr[idx]^2 + qsw_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2) for idx in findall(c_rating .< Inf)]
+    con(pm, nw, :mu_cm_switch_inline_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, psw_fr[idx]^2 + qsw_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2) for idx in findall(c_rating .< Inf)]
 
     if _IM.report_duals(pm)
-        _PMD.sol(pm, nw, :switch_inline_ne, f_idx[1])[:mu_cm_fr] = mu_cm_fr
+        sol(pm, nw, :switch_inline_ne, f_idx[1])[:mu_cm_fr] = mu_cm_fr
     end
 
     nothing

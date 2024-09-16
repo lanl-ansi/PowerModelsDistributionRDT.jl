@@ -2,8 +2,8 @@
 function calc_unique_virtual_bus_id_start(data::Dict{String,Any})
     virtual_bus_id = 0
     for i in keys(data["bus"])
-        if parse(Int64,i) >= virtual_bus_id
-            virtual_bus_id = parse(Int64,i)  + 1
+        if parse(Int64, i) >= virtual_bus_id
+            virtual_bus_id = parse(Int64, i) + 1
         end
     end
     return virtual_bus_id
@@ -12,8 +12,8 @@ end
 function calc_unique_switch_id_start(data::Dict{String,Any})
     switch_id = 0
     for i in keys(data["switch"])
-        if parse(Int64,i) >= switch_id
-            switch_id = parse(Int64,i)  + 1
+        if parse(Int64, i) >= switch_id
+            switch_id = parse(Int64, i) + 1
         end
     end
     return switch_id
@@ -27,7 +27,7 @@ function transform_switch_inline!(data_math::Dict{String,Any}, data_eng::Dict{St
     for (i, branch) in data_math["branch"]
         if get(branch, "has_switch", false) == true
             create_inline_switch!(data_math, data_eng, virtual_bus_id, unique_switch_id, i, branch)
-            virtual_bus_id   = virtual_bus_id + 1
+            virtual_bus_id = virtual_bus_id + 1
             unique_switch_id = unique_switch_id + 1
         end
     end
@@ -35,57 +35,57 @@ function transform_switch_inline!(data_math::Dict{String,Any}, data_eng::Dict{St
     # always add a switch for each expansion branch - it will be explictly in the model, but won't do anything unless the branch is there
     for (i, branch) in data_math["branch_ne"]
         create_inline_switch!(data_math, data_eng, virtual_bus_id, unique_switch_id, i, branch)
-        virtual_bus_id   = virtual_bus_id + 1
+        virtual_bus_id = virtual_bus_id + 1
         unique_switch_id = unique_switch_id + 1
     end
 
 end
 
 function create_inline_switch!(data_math::Dict{String,Any}, data_eng::Dict{String,Any}, virtual_bus_id::Int, unique_switch_id::Int, branch_id::String, branch::Dict{String,Any})
-    switch_inline_data         = data_math["switch"]
+    switch_inline_data = data_math["switch"]
 
     # create the virtual bus
     bus_id = string(virtual_bus_id)
 
     # information about bus
-    bus_info              = deepcopy(data_eng["bus"][string(branch["t_bus"])])
-    bus_info["name"]      = virtual_bus_id
-    bus_info["index"]     = virtual_bus_id
-    bus_info["bus_i"]     = virtual_bus_id
+    bus_info = deepcopy(data_eng["bus"][string(branch["t_bus"])])
+    bus_info["name"] = virtual_bus_id
+    bus_info["index"] = virtual_bus_id
+    bus_info["bus_i"] = virtual_bus_id
     bus_info["source_id"] = ["bus", virtual_bus_id]
 
     # create the switch
-    switch_info           = Dict{String,Any}()
-    switch_id             = string(branch_id)
-    if haskey(data_math["switch"],branch_id)
+    switch_info = Dict{String,Any}()
+    switch_id = string(branch_id)
+    if haskey(data_math["switch"], branch_id)
         switch_id = string(unique_switch_id)
     end
 
     # information about the switch
-    switch_info["name"]          = switch_id
-    switch_info["index"]         = parse(Int64,branch_id)
-    switch_info["status"]        = 1
-    switch_info["f_bus"]         = virtual_bus_id
-    switch_info["t_bus"]         = branch["t_bus"]
+    switch_info["name"] = switch_id
+    switch_info["index"] = parse(Int64, branch_id)
+    switch_info["status"] = 1
+    switch_info["f_bus"] = virtual_bus_id
+    switch_info["t_bus"] = branch["t_bus"]
     switch_info["f_connections"] = deepcopy(branch["f_connections"])
     switch_info["t_connections"] = deepcopy(branch["t_connections"])
-    switch_info["rate_a"]        = branch["rate_a"]
-    switch_info["rate_b"]        = branch["rate_b"]
-    switch_info["rate_c"]        = branch["rate_c"]
-    switch_info["dispatchable"]  = Int(_PMD.YES)
-    switch_info["state"]         = Int(_PMD.CLOSED)
+    switch_info["rate_a"] = branch["rate_a"]
+    switch_info["rate_b"] = branch["rate_b"]
+    switch_info["rate_c"] = branch["rate_c"]
+    switch_info["dispatchable"] = Int(_PMD.YES)
+    switch_info["state"] = Int(_PMD.CLOSED)
     switch_info["switch_branch"] = branch_id
 
     # final updates to everything
     branch["t_bus"] = virtual_bus_id
-    switch_inline_data[switch_id]    = switch_info
-    data_math["bus"][bus_id]         = bus_info
+    switch_inline_data[switch_id] = switch_info
+    data_math["bus"][bus_id] = bus_info
 end
 
 # Function looks for all lines where switches cab be added (expanded) and creates ne_switches in these
 # locations, which are always closed if unbuilt
 function transform_switch_inline_ne!(data_math::Dict{String,Any}, data_eng::Dict{String,Any})
-    switch_inline_ne_data         = get(data_math, "switch_inline_ne", Dict{String,Any}())
+    switch_inline_ne_data = get(data_math, "switch_inline_ne", Dict{String,Any}())
 
     virtual_bus_id = calc_unique_virtual_bus_id_start(data_math)
     unique_switch_id = 0
@@ -96,43 +96,43 @@ function transform_switch_inline_ne!(data_math::Dict{String,Any}, data_eng::Dict
             bus_id = string(virtual_bus_id)
 
             # information about bus
-            bus_info              = deepcopy(data_eng["bus"][string(branch["t_bus"])])
-            bus_info["name"]      = virtual_bus_id
-            bus_info["index"]     = virtual_bus_id
-            bus_info["bus_i"]     = virtual_bus_id
+            bus_info = deepcopy(data_eng["bus"][string(branch["t_bus"])])
+            bus_info["name"] = virtual_bus_id
+            bus_info["index"] = virtual_bus_id
+            bus_info["bus_i"] = virtual_bus_id
             bus_info["source_id"] = ["bus", virtual_bus_id]
 
             # create the switch
-            switch_info           = Dict{String,Any}()
-            switch_id             = string(i)
-            if haskey(switch_inline_ne_data,i)
+            switch_info = Dict{String,Any}()
+            switch_id = string(i)
+            if haskey(switch_inline_ne_data, i)
                 switch_id = string(unique_switch_id)
                 unique_switch_id = unique_switch_id + 1
             else
-                unique_switch_id = max(unique_switch_id, parse(Int64,i) + 1)
+                unique_switch_id = max(unique_switch_id, parse(Int64, i) + 1)
             end
 
             # information about the switch
-            switch_info["name"]          = switch_id
-            switch_info["index"]         = parse(Int64,i)
-            switch_info["status"]        = 1
-            switch_info["f_bus"]         = virtual_bus_id
-            switch_info["t_bus"]         = branch["t_bus"]
+            switch_info["name"] = switch_id
+            switch_info["index"] = parse(Int64, i)
+            switch_info["status"] = 1
+            switch_info["f_bus"] = virtual_bus_id
+            switch_info["t_bus"] = branch["t_bus"]
             switch_info["f_connections"] = deepcopy(branch["f_connections"])
             switch_info["t_connections"] = deepcopy(branch["t_connections"])
-            switch_info["rate_a"]        = branch["rate_a"]
-            switch_info["rate_b"]        = branch["rate_b"]
-            switch_info["rate_c"]        = branch["rate_c"]
-            switch_info["dispatchable"]  = Int(_PMD.YES)
-            switch_info["state"]         = Int(_PMD.CLOSED)
-            switch_info["switch_cost"]   = branch["switch_cost"]
+            switch_info["rate_a"] = branch["rate_a"]
+            switch_info["rate_b"] = branch["rate_b"]
+            switch_info["rate_c"] = branch["rate_c"]
+            switch_info["dispatchable"] = Int(_PMD.YES)
+            switch_info["state"] = Int(_PMD.CLOSED)
+            switch_info["switch_cost"] = branch["switch_cost"]
             switch_info["switch_branch"] = i
 
             # final updates to everything
             branch["t_bus"] = virtual_bus_id
             switch_inline_ne_data[switch_id] = switch_info
-            data_math["bus"][bus_id]         = bus_info
-            virtual_bus_id                   = virtual_bus_id + 1
+            data_math["bus"][bus_id] = bus_info
+            virtual_bus_id = virtual_bus_id + 1
         end
     end
 
@@ -142,21 +142,21 @@ end
 
 # Function that looks for branches labeled as a tranformer and moves them to the appropriate location
 function transform_branch2transformer!(data_math::Dict{String,Any}, data_eng::Dict{String,Any})
-    transformer_ne_data         = get(data_math, "transformer_ne", Dict{String,Any}())
-    transformer_data            = get(data_math, "transformer", Dict{String,Any}())
+    transformer_ne_data = get(data_math, "transformer_ne", Dict{String,Any}())
+    transformer_data = get(data_math, "transformer", Dict{String,Any}())
 
     ids_to_remove = []
     for (i, branch) in data_math["branch"]
         if get(branch, "transformer", false) == true
             push!(ids_to_remove, i)
             nphases = length(branch["f_connections"])
-            branch["status"]        = get(branch, "status", branch["br_status"])
+            branch["status"] = get(branch, "status", branch["br_status"])
             branch["configuration"] = get(branch, "configuration", _PMD.WYE)
-            branch["tm_set"]        = get(branch, "tm_set", fill(1.0, nphases))
-            branch["tm_nom"]        = get(branch, "tm_nom", 1.0)
-            branch["polarity"]      = get(branch, "polarity", -1)
+            branch["tm_set"] = get(branch, "tm_set", fill(1.0, nphases))
+            branch["tm_nom"] = get(branch, "tm_nom", 1.0)
+            branch["polarity"] = get(branch, "polarity", -1)
 
-            transformer_data[i]     = branch
+            transformer_data[i] = branch
         end
     end
     for i in ids_to_remove
@@ -168,13 +168,13 @@ function transform_branch2transformer!(data_math::Dict{String,Any}, data_eng::Di
         if get(branch, "transformer", false) == true
             push!(ids_to_remove, i)
             nphases = length(branch["f_connections"])
-            branch["status"]        = get(branch, "status", branch["br_status"])
+            branch["status"] = get(branch, "status", branch["br_status"])
             branch["configuration"] = get(branch, "configuration", _PMD.WYE)
-            branch["tm_set"]        = get(branch, "tm_set", fill(1.0, nphases))
-            branch["tm_nom"]        = get(branch, "tm_nom", 1.0)
-            branch["polarity"]        = get(branch, "polarity", -1)
+            branch["tm_set"] = get(branch, "tm_set", fill(1.0, nphases))
+            branch["tm_nom"] = get(branch, "tm_nom", 1.0)
+            branch["polarity"] = get(branch, "polarity", -1)
 
-            transformer_ne_data[i]  = branch
+            transformer_ne_data[i] = branch
         end
     end
     for i in ids_to_remove
@@ -182,5 +182,5 @@ function transform_branch2transformer!(data_math::Dict{String,Any}, data_eng::Di
     end
 
     data_math["transformer_ne"] = transformer_ne_data
-    data_math["transformer"]    = transformer_data
+    data_math["transformer"] = transformer_data
 end

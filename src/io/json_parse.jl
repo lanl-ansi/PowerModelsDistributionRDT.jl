@@ -17,7 +17,7 @@ pms_keys = [
     "per_unit",
     "baseMVA",
     "data_model",
-    "transformer" ]
+    "transformer"]
 
 global_keys = Set{String}([
     "phase_variation",
@@ -26,27 +26,28 @@ global_keys = Set{String}([
     "chance_constraint",
     "scenarios",
     "data_model",
-    ])
+])
 
 function parse_json(io::IOStream; validate=false)
     json_data = JSON.parse(io; dicttype=Dict, inttype=Int64)
-    return pm_data = json_to_powermodels(json_data)
+    return pm_data = json_to_pmd(json_data)
 end
 
-function json_to_powermodels(data::Dict{String,Any})
+function json_to_pmd(data::Dict{String,Any})
     pm_data = Dict{String,Any}()
     pm_data["conductors"] = 3
     lookups = create_lookups(data)
-    pm_data["phase_variation"] = convert(Float64,data["phase_variation"])
-    pm_data["total_load_met"] = convert(Float64,data["total_load_met"])
-    pm_data["critical_load_met"] = convert(Float64,data["critical_load_met"])
-    pm_data["chance_constraint"] = convert(Float64,data["chance_constraint"])
+    pm_data["phase_variation"] = convert(Float64, data["phase_variation"])
+    pm_data["total_load_met"] = convert(Float64, data["total_load_met"])
+    pm_data["critical_load_met"] = convert(Float64, data["critical_load_met"])
+    pm_data["chance_constraint"] = convert(Float64, data["chance_constraint"])
     json2pm_branch!(data, pm_data, lookups)
     json2pm_gen!(data, pm_data, lookups)
     json2pm_bus!(data, pm_data, lookups)
     json2pm_load!(data, pm_data, lookups)
-    pm_data["settings"] = get(pm_data,"settings", Dict{String,Any}("sbase_default" => get(data, "baseMVA", 1e6)))
+    pm_data["settings"] = get(pm_data, "settings", Dict{String,Any}("sbase_default" => get(data, "baseMVA", 1e6)))
     add_keys!(pm_data)
+    pm_data["data_model"] = _PMD.MATHEMATICAL
     correct_network_data!(pm_data)
 
     # the legacy LPNORM data format is a mix of a math model and an engineering model, so it is classified as a math model
@@ -56,11 +57,11 @@ function json_to_powermodels(data::Dict{String,Any})
 
     transform_branch2transformer!(pm_data, pm_data)
 
-    haskey(data,"scenarios") ? json2pm_scenarios!(data, pm_data, lookups) : println("No scenarios found in file")
-    haskey(pm_data, "scenarios") ?  mn_data = _PM.replicate(pm_data, length(keys(pm_data["scenarios"]))+1, global_keys=global_keys) : mn_data = pm_data
+    haskey(data, "scenarios") ? json2pm_scenarios!(data, pm_data, lookups) : println("No scenarios found in file")
+    haskey(pm_data, "scenarios") ? mn_data = replicate(pm_data, length(keys(pm_data["scenarios"])) + 1; global_keys=global_keys) : mn_data = pm_data
 
-    mn_data["nw"]["0"] = mn_data["nw"][string(length(keys(pm_data["scenarios"]))+1)]
-    delete!(mn_data["nw"], string(length(keys(pm_data["scenarios"]))+1))
+    mn_data["nw"]["0"] = mn_data["nw"][string(length(keys(pm_data["scenarios"])) + 1)]
+    delete!(mn_data["nw"], string(length(keys(pm_data["scenarios"])) + 1))
 
     # not sure why this isn't getting replicated
     for n in keys(mn_data["nw"])
@@ -92,7 +93,7 @@ function add_keys!(data::Dict{String,Any})
         !haskey(data, key) ? data[key] = Dict{String,Any}() : nothing
         "per_unit" == key ? data[key] = true : nothing
         "data_model" == key ? data[key] = _PMD.MATHEMATICAL : nothing
-        "transformer" == key ? data[key] = Dict{String, Any}() : nothing
+        "transformer" == key ? data[key] = Dict{String,Any}() : nothing
     end
 end
 
@@ -123,8 +124,8 @@ end
 #                              (per length, per unit).
 #
 function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups::Dict{Symbol,Any})
-    branch_data            = Dict{String,Any}()
-    branch_ne_data         = Dict{String,Any}()
+    branch_data = Dict{String,Any}()
+    branch_ne_data = Dict{String,Any}()
     lookups[:branch_names] = Dict{String,Any}()
     for (i, branch) in enumerate(data["lines"])
         # information about line
@@ -153,8 +154,8 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         info["t_bus"] = lookups[:bus][branch["node2_id"]]
 
         # line parameters
-        info["br_r"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "rmatrix", convert(Float64,branch["length"]))
-        info["br_x"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "xmatrix", convert(Float64,branch["length"]))
+        info["br_r"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "rmatrix", convert(Float64, branch["length"]))
+        info["br_x"] = arrays_2_matrix(data["line_codes"][lookups[:branch][branch["line_code"]+1]], "xmatrix", convert(Float64, branch["length"]))
         info["g_to"] = make_zeros()
         info["g_fr"] = make_zeros()
         info["b_to"] = make_zeros()
@@ -172,14 +173,14 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         info["rate_c"] = Array{Float64,1}([branch["capacity"] for i in 1:pm_data["conductors"]])
 
         # angle
-        info["angmin"] = Array{Float64,1}([-.523599 for i in 1:pm_data["conductors"]])
-        info["angmax"] = Array{Float64,1}([.523599 for i in 1:pm_data["conductors"]])
+        info["angmin"] = Array{Float64,1}([-0.523599 for i in 1:pm_data["conductors"]])
+        info["angmax"] = Array{Float64,1}([0.523599 for i in 1:pm_data["conductors"]])
 
         info["f_connections"] = collect(1:pm_data["conductors"])
         info["t_connections"] = collect(1:pm_data["conductors"])
 
         # keys that maybe missing from some lines
-        keys_ =["switch_cost", "harden_cost", "construction_cost", "num_poles", "can_harden", "can_add_switch", "is_new", "has_switch"]
+        keys_ = ["switch_cost", "harden_cost", "construction_cost", "num_poles", "can_harden", "can_add_switch", "is_new", "has_switch"]
         for k in keys_
             if haskey(branch, k)
                 info[k] = branch[k]
@@ -195,7 +196,7 @@ function json2pm_branch!(data::Dict{String,Any}, pm_data::Dict{String,Any}, look
         end
 
     end
-    pm_data["branch"]    = branch_data
+    pm_data["branch"] = branch_data
     pm_data["branch_ne"] = branch_ne_data
 end
 
@@ -211,7 +212,7 @@ end
 # is_new                    Boolean to indicate whether or not this generator has to
 #                           be built.
 function json2pm_gen!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups)
-    gen_data    = Dict{String,Any}()
+    gen_data = Dict{String,Any}()
     gen_ne_data = Dict{String,Any}()
 
     for (i, gen) in enumerate(data["generators"])
@@ -252,7 +253,7 @@ function json2pm_gen!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
 
         info["connections"] = collect(1:pm_data["conductors"])
     end
-    pm_data["gen"]    = gen_data
+    pm_data["gen"] = gen_data
     pm_data["gen_ne"] = gen_ne_data
 end
 
@@ -297,11 +298,11 @@ function json2pm_bus!(data::Dict{String,Any}, pm_data::Dict{String,Any}, lookups
 
         # Things needed for an engineerng model
         bus_data[id]["terminals"] = collect(1:pm_data["conductors"])
-        bus_data[id]["grounded"]  = fill(false, pm_data["conductors"])
-        bus_data[id]["status"]    = 1
-        bus_data[id]["rg"]        = [0.0, 0.0, 0.0]
-        bus_data[id]["xg"]        = [0.0, 0.0, 0.0]
-        bus_data[id]["base_kv"]   = 1.0
+        bus_data[id]["grounded"] = fill(false, pm_data["conductors"])
+        bus_data[id]["status"] = 1
+        bus_data[id]["rg"] = [0.0, 0.0, 0.0]
+        bus_data[id]["xg"] = [0.0, 0.0, 0.0]
+        bus_data[id]["base_kv"] = 1.0
     end
     pm_data["bus"] = bus_data
 end
@@ -388,7 +389,7 @@ function arrays_2_matrix(m::Dict{String,Any}, string::String, l::Float64)
     conductors = 3
     value = zeros(Float64, 0, conductors)
     for r in m[string]
-        value = [value;transpose(convert(Array{Float64,1},r))]
+        value = [value; transpose(convert(Array{Float64,1}, r))]
     end
     value[1] < 1e-9 ? value[1] = 1e-9 : nothing
     value[5] < 1e-9 ? value[5] = 1e-9 : nothing
@@ -414,7 +415,7 @@ function scenarios2_mn!(data::Dict{String,Any}, lookups::Dict{Symbol,Any})
     for (s, scenario) in data["scenarios"]
         pm_data = data["nw"][s]
 
-        for id in get(scenario,"hardened_disabled_lines", [])
+        for id in get(scenario, "hardened_disabled_lines", [])
             i = parse(Int64, id)
             if haskey(pm_data["branch"], id)
                 push!(pm_data["damaged_hardened_branch"], i)
