@@ -1,6 +1,6 @@
 name = "PowerModelsDistributionRDT"
 uuid = "66cb097a-b461-11e9-2c74-17ced528deb4"
-authors = ["David M Fobes <dfobes@lanl.gov>", "Jose Tabarez", "Russell Bent"]
+authors = ["Russell Bent", "David M Fobes <dfobes@lanl.gov>", "Jose Tabarez"]
 version = "0.1.0"
 
 [deps]
@@ -17,12 +17,12 @@ SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [compat]
 InfrastructureModels = "0.7"
-Ipopt = "0.9, 1.0.2"
-JSON = "0.18, 0.19, 0.20, 0.21"
-JuMP = "0.22, 0.23, 1"
-PowerModelsDistribution = "0.15"
-PowerModelsONM = "3.5"
-SCS = "0.9, 1.0, 1.1"
+Ipopt = "1.0.2"
+JSON = "0.21"
+JuMP = "1.23.2"
+PowerModelsDistribution = "0.16"
+PowerModelsONM = "4.0"
+SCS = "1.1"
 julia = "1.6"
 
 [extras]

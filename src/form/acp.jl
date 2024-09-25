@@ -39,7 +39,7 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedACPModel
     ungrounded_terminals = [(idx,t) for (idx,t) in enumerate(terminals) if !grounded[idx]]
 
     for (idx,t) in ungrounded_terminals
-        cp = JuMP.@NLconstraint(pm.model,
+        cp = JuMP.@constraint(pm.model,
               sum(p[a][t] for (a, conns) in bus_arcs if t in conns)
             + sum(psw[a_sw][t] for (a_sw, conns) in bus_arcs_sw if t in conns)
             + sum(pt[a_t][t] for (a_t, conns) in bus_arcs_trans if t in conns)
@@ -61,7 +61,7 @@ function constraint_mc_power_balance_shed_ne(pm::_PMD.AbstractUnbalancedACPModel
         )
         push!(cstr_p, cp)
 
-        cq = JuMP.@NLconstraint(pm.model,
+        cq = JuMP.@constraint(pm.model,
               sum(q[a][t] for (a, conns) in bus_arcs if t in conns)
             + sum(qsw[a_sw][t] for (a_sw, conns) in bus_arcs_sw if t in conns)
             + sum(qt[a_t][t] for (a_t, conns) in bus_arcs_trans if t in conns)
@@ -111,7 +111,7 @@ function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedACPModel
     he_s  = var(pm, nw, :he_s, f_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vm_fr[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= vm_fr[idx]^2 * c_rating[idx]^2 * he_s) for idx in f_connections]
+    con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= vm_fr[idx]^2 * c_rating[idx]^2 * he_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
         sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
@@ -137,7 +137,7 @@ function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedACPModel, 
     he_s  = var(pm, nw, :he_s, t_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vm_to[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= vm_to[idx]^2 * c_rating[idx]^2 * he_s) for idx in t_connections]
+    con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= vm_to[idx]^2 * c_rating[idx]^2 * he_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
@@ -164,7 +164,7 @@ function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedACPModel, nw:
     xe_s  = var(pm, nw, :xe_s, f_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vm_fr[idx]^2, and do exact McCormick on v_sqr * xe_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= vm_fr[idx]^2 * c_rating[idx]^2 * xe_s) for idx in f_connections]
+    con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 <= vm_fr[idx]^2 * c_rating[idx]^2 * xe_s) for idx in f_connections]
 
 
     if _IM.report_duals(pm)
@@ -191,7 +191,7 @@ function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::I
     xe_s  = var(pm, nw, :xe_s, t_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vm_to[idx]^2, and do exact McCormick on v_sqr * xe_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= vm_to[idx]^2 * c_rating[idx]^2 * xe_s) for idx in t_connections]
+    con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 <= vm_to[idx]^2 * c_rating[idx]^2 * xe_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to
@@ -237,7 +237,7 @@ function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedACPModel,
     ohms_yt_p = JuMP.ConstraintRef[]
     ohms_yt_q = JuMP.ConstraintRef[]
     for (idx, (fc,tc)) in enumerate(zip(f_connections,t_connections))
-        push!(ohms_yt_p, JuMP.@NLconstraint(pm.model, p_fr[fc] == he_s * ((G[idx,idx]+G_fr[idx,idx])*vm_fr[fc]^2
+        push!(ohms_yt_p, JuMP.@constraint(pm.model, p_fr[fc] == he_s * ((G[idx,idx]+G_fr[idx,idx])*vm_fr[fc]^2
             +sum( (G[idx,jdx]+G_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
                  +(B[idx,jdx]+B_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
                 for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)
@@ -247,7 +247,7 @@ function constraint_mc_ohms_yt_from_damaged(pm::_PMD.AbstractUnbalancedACPModel,
             )
         )
 
-        push!(ohms_yt_q, JuMP.@NLconstraint(pm.model, q_fr[fc] == he_s * (-(B[idx,idx]+B_fr[idx,idx])*vm_fr[fc]^2
+        push!(ohms_yt_q, JuMP.@constraint(pm.model, q_fr[fc] == he_s * (-(B[idx,idx]+B_fr[idx,idx])*vm_fr[fc]^2
             -sum( (B[idx,jdx]+B_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
                  -(G[idx,jdx]+G_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
                 for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)
@@ -311,7 +311,7 @@ function constraint_mc_ohms_yt_from_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::
     ohms_yt_p = JuMP.ConstraintRef[]
     ohms_yt_q = JuMP.ConstraintRef[]
     for (idx, (fc,tc)) in enumerate(zip(f_connections,t_connections))
-        push!(ohms_yt_p, JuMP.@NLconstraint(pm.model, p_fr[fc] == xe_s * ((G[idx,idx]+G_fr[idx,idx])*vm_fr[fc]^2
+        push!(ohms_yt_p, JuMP.@constraint(pm.model, p_fr[fc] == xe_s * ((G[idx,idx]+G_fr[idx,idx])*vm_fr[fc]^2
             +sum( (G[idx,jdx]+G_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
                  +(B[idx,jdx]+B_fr[idx,jdx]) * vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
                 for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)
@@ -321,7 +321,7 @@ function constraint_mc_ohms_yt_from_ne(pm::_PMD.AbstractUnbalancedACPModel, nw::
             )
         )
 
-        push!(ohms_yt_q, JuMP.@NLconstraint(pm.model, q_fr[fc] == xe_s * (-(B[idx,idx]+B_fr[idx,idx])*vm_fr[fc]^2
+        push!(ohms_yt_q, JuMP.@constraint(pm.model, q_fr[fc] == xe_s * (-(B[idx,idx]+B_fr[idx,idx])*vm_fr[fc]^2
             -sum( (B[idx,jdx]+B_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*cos(va_fr[fc]-va_fr[fd])
                  -(G[idx,jdx]+G_fr[idx,jdx])*vm_fr[fc]*vm_fr[fd]*sin(va_fr[fc]-va_fr[fd])
                 for (jdx, (fd,td)) in enumerate(zip(f_connections,t_connections)) if idx != jdx)

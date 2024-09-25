@@ -43,7 +43,7 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
 
     # pd/qd can be NLexpressions, so cannot be vectorized
     for (idx, t) in ungrounded_terminals
-        cp = _PMD.@smart_constraint(pm.model, [p, pg, ps, psw, pt],
+        cp = JuMP.@constraint(pm.model,
               sum(p[a][t] for (a, conns) in bus_arcs if t in conns)
             + sum(psw[a][t] for (a, conns) in bus_arcs_sw if t in conns)
             + sum(pt[a][t] for (a, conns) in bus_arcs_trans if t in conns)
@@ -61,7 +61,7 @@ function constraint_mc_power_ne_balance_shed(pm::_PMD.AbstractUnbalancedACRModel
         )
         push!(cstr_p, cp)
 
-        cq = _PMD.@smart_constraint(pm.model, [q, qg, qs, qsw, qt],
+        cq = JuMP.@constraint(pm.model,
               sum(q[a][t] for (a, conns) in bus_arcs if t in conns)
             + sum(qsw[a][t] for (a, conns) in bus_arcs_sw if t in conns)
             + sum( qt[a][t] for (a, conns) in bus_arcs_trans if t in conns)
@@ -110,7 +110,7 @@ function constraint_mc_ampacity_from_damaged(pm::_PMD.AbstractUnbalancedRectangu
     he_s  = var(pm, nw, :he_s, f_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * he_s) for idx in f_connections]
+    con(pm, nw, :mu_cm_branch)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * he_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
         sol(pm, nw, :branch, f_idx[1])[:mu_cm_fr] = mu_cm_fr
@@ -137,7 +137,7 @@ function constraint_mc_ampacity_to_damaged(pm::_PMD.AbstractUnbalancedRectangula
     he_s  = var(pm, nw, :he_s, t_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * he_s) for idx in t_connections]
+    con(pm, nw, :mu_cm_branch)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * he_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         sol(pm, nw, :branch, t_idx[1])[:mu_cm_to] = mu_cm_to
@@ -164,7 +164,7 @@ function constraint_mc_ampacity_from_ne(pm::_PMD.AbstractUnbalancedRectangularMo
     xe_s  = var(pm, nw, :xe_s, f_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_fr[idx]^2 + vi_fr[idx]^2, and do exact McCormick on v_sqr * he_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@NLconstraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * xe_s) for idx in f_connections]
+    con(pm, nw, :mu_cm_branch_ne)[f_idx] = mu_cm_fr = [JuMP.@constraint(pm.model, p_fr[idx]^2 + q_fr[idx]^2 .<= (vr_fr[idx]^2 + vi_fr[idx]^2) * c_rating[idx]^2 * xe_s) for idx in f_connections]
 
     if _IM.report_duals(pm)
         sol(pm, nw, :branch_ne, f_idx[1])[:mu_cm_fr_ne] = mu_cm_fr
@@ -191,7 +191,7 @@ function constraint_mc_ampacity_to_ne(pm::_PMD.AbstractUnbalancedRectangularMode
     xe_s  = var(pm, nw, :xe_s, t_idx[1])
 
     # TODO: maybe introduce an auxillary varaible v_sqr = vr_to[idx]^2 + vi_to[idx]^2, and do exact McCormick on v_sqr * xe_s (and use @constraint)
-    con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@NLconstraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
+    con(pm, nw, :mu_cm_branch_ne)[t_idx] = mu_cm_to = [JuMP.@constraint(pm.model, p_to[idx]^2 + q_to[idx]^2 .<= (vr_to[idx]^2 + vi_to[idx]^2) * c_rating[idx]^2 * xe_s) for idx in t_connections]
 
     if _IM.report_duals(pm)
         sol(pm, nw, :branch_ne, t_idx[1])[:mu_cm_to_ne] = mu_cm_to
@@ -365,8 +365,8 @@ function constraint_mc_switch_inline_ne_voltage_open_close(pm::_PMD.AbstractUnba
     state = var(pm, nw, :switch_inline_ne_state, i)
 
     for (idx, (fc, tc)) in enumerate(zip(f_connections, t_connections))
-        JuMP.@NLconstraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) <=  (vmax[idx]^2-vmin[idx]^2) * (1-state))
-        JuMP.@NLconstraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) >= -(vmax[idx]^2-vmin[idx]^2) * (1-state))
+        JuMP.@constraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) <=  (vmax[idx]^2-vmin[idx]^2) * (1-state))
+        JuMP.@constraint(pm.model, (vr_fr[fc]^2 + vi_fr[fc]^2) - (vr_to[tc]^2 + vi_to[tc]^2) >= -(vmax[idx]^2-vmin[idx]^2) * (1-state))
     end
 end
 
