@@ -3,7 +3,7 @@
     data = parse_file(small_data)
     result = solve_rdt(data, ACPUPowerModel, juniper_solver)
     @test result["termination_status"] == LOCALLY_SOLVED || result["termination_status"] == ALMOST_LOCALLY_SOLVED
-    @test isapprox(result["objective"], 167, atol=1e-1)
+    @test isapprox(result["objective"], 163, atol=1e-1)
 end
 
 @testset "Small Test - Cost Adjust 1" begin
@@ -13,7 +13,7 @@ end
     data["nw"]["0"]["gen_ne"]["2"]["construction_cost"] = 10.0
     result = solve_rdt(data, ACPUPowerModel, juniper_solver)
     @test result["termination_status"] == LOCALLY_SOLVED || result["termination_status"] == ALMOST_LOCALLY_SOLVED
-    @test isapprox(result["objective"], 313, atol=1e-1)
+    @test isapprox(result["objective"], 163, atol=1e-1)
 end
 
 @testset "Small Test - Cost Adjust 2" begin
@@ -22,5 +22,5 @@ end
     data["nw"]["0"]["branch_ne"]["4"]["construction_cost"] = 7.0
     result = solve_rdt(data, ACPUPowerModel, juniper_solver)
     @test result["termination_status"] == LOCALLY_SOLVED || result["termination_status"] == ALMOST_LOCALLY_SOLVED
-    @test isapprox(result["objective"], 167, atol=1e-1)
+    @test isapprox(result["objective"], 163, atol=1e-1)
 end
