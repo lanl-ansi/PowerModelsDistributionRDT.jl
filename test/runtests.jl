@@ -8,6 +8,7 @@ const _IM = InfrastructureModels
 import Memento
 
 import PowerModelsDistribution as _PMD
+import PowerModelsONM as _ONM
 
 # Suppress warnings during testing.
 Memento.setlevel!(Memento.getlogger(InfrastructureModels), "error")
@@ -28,6 +29,7 @@ using Test
 using Test
 
 _PMD.silence!()
+_ONM.silence!()
 
 ipopt_solver = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0, "sb" => "yes", "max_iter" => 1000, "acceptable_tol" => 1.0e-2)
 juniper_solver = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt_solver, "log_levels" => [],)
