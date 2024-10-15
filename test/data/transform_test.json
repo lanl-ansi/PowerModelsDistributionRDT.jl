@@ -1,0 +1,226 @@
+
+
+{
+  "total_load_met": 0.5,
+  "critical_load_met": 0.98,
+  "phase_variation": 0.15,
+  "chance_constraint": 1,
+  "buses": [
+  {
+    "min_voltage": 0.8,
+    "id": "sourcebus",
+    "x": -72.654429517,
+    "max_voltage": 1.2,
+    "ref_voltage": [
+      1,
+      1,
+      1
+    ],
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "y": 41.750093406
+  },
+  {
+    "min_voltage": 0.8,
+    "id": "1",
+    "x": -72.65474391,
+    "max_voltage": 1.2,
+    "ref_voltage": [
+      1,
+      1,
+      1
+    ],
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "y": 41.749612757
+  }
+],
+"line_codes": [
+    {
+      "line_code": 0,
+      "num_phases": 3,
+      "rmatrix": [
+        [
+          0.00047860457466919,
+          7.5220548204159e-5,
+          7.6258809073724e-5
+        ],
+        [
+          7.5220548204159e-5,
+          0.00047395028355388,
+          7.3967466918715e-5
+        ],
+        [
+          7.6258809073724e-5,
+          7.3967466918715e-5,
+          0.00047595519848771
+        ]
+      ],
+      "xmatrix": [
+        [
+          0.00047770950850662,
+          0.00020690124763705,
+          0.00017954831758034
+        ],
+        [
+          0.00020690124763705,
+          0.00048580083175803,
+          0.00016436816635161
+        ],
+        [
+          0.00017954831758034,
+          0.00016436816635161,
+          0.00048229221172023
+        ]
+      ]
+    }
+  ],
+  "lines": [
+  {
+    "line_code": 0,
+    "is_new": false,
+    "length": 0.2151976954638,
+    "harden_cost": 4.3752376578427,
+    "id": "1",
+    "has_switch": false,
+    "switch_cost": 15,
+    "num_phases": 3,
+    "node2_id": "1",
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "is_transformer": false,
+    "num_poles": 2,
+    "node1_id": "sourcebus",
+    "capacity": 57.6
+  },
+  {
+    "line_code": 0,
+    "is_new": true,
+    "length": 0.2151976954638,
+    "harden_cost": 4.3752376578427,
+    "id": "2",
+    "has_switch": false,
+    "switch_cost": 15,
+    "num_phases": 3,
+    "node2_id": "1",
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "is_transformer": false,
+    "num_poles": 2,
+    "node1_id": "sourcebus",
+    "capacity": 57.6
+  },
+  {
+    "line_code": 0,
+    "is_new": false,
+    "length": 0.2151976954638,
+    "can_harden": false,
+    "harden_cost": 4.3752376578427,
+    "id": "3",
+    "has_switch": true,
+    "switch_cost": 15,
+    "num_phases": 3,
+    "node2_id": "1",
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "is_transformer": false,
+    "num_poles": 2,
+    "node1_id": "sourcebus",
+    "capacity": 57.6
+  }
+],
+"generators": [
+  {
+    "max_microgrid": 0.05,
+    "microgrid_cost": 0,
+    "microgrid_fixed_cost": 0,
+    "is_new": false,
+    "id": "source-sourcebus",
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "node_id": "sourcebus",
+    "max_real_phase": [
+      1.7976931348623e+303,
+      1.7976931348623e+303,
+      1.7976931348623e+303
+    ],
+    "max_reactive_phase": [
+      1.7976931348623e+303,
+      1.7976931348623e+303,
+      1.7976931348623e+303
+    ]
+  },
+  {
+    "max_microgrid": 0.05,
+    "microgrid_cost": 0,
+    "microgrid_fixed_cost": 0,
+    "is_new": true,
+    "id": "1",
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "node_id": "sourcebus",
+    "max_real_phase": [
+      1.7976931348623e+303,
+      1.7976931348623e+303,
+      1.7976931348623e+303
+    ],
+    "max_reactive_phase": [
+      1.7976931348623e+303,
+      1.7976931348623e+303,
+      1.7976931348623e+303
+    ]
+  }
+],
+"loads": [
+  {
+    "is_critical": true,
+    "id": "1",
+    "has_phase": [
+      true,
+      true,
+      true
+    ],
+    "node_id": "1",
+    "max_real_phase": [
+      0.0002,
+      0.0002,
+      0.0002
+    ],
+    "max_reactive_phase": [
+      0.00016,
+      0.00016,
+      0.00016
+    ]
+  }
+],
+"scenarios": [
+  {
+    "hardened_disabled_lines": [
+    ],
+    "id": "1",
+    "disable_lines": [
+    ]
+  }
+]
+}
