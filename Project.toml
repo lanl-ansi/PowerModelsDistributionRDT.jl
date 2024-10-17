@@ -25,6 +25,7 @@ MathOptInterface = "1.31.2"
 PowerModelsDistribution = "0.16"
 PowerModelsONM = "4.0"
 SCS = "1.1"
+SHA = "0.7"
 julia = "1.6"
 
 [extras]
